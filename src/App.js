@@ -1,12 +1,18 @@
 import './App.css';
-import Button from 'react-bootstrap/Button';
+import React from "react";
+import { Navigate } from "react-router-dom";
+import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
+import Login from "./components/Auth/Login";
 
-function App() {
+const App = () => {
   return (
-    <div className="App">
-      <Button variant="primary">Primary</Button>
-    </div>
+    <Router>
+      <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route path="*" element={<Navigate to="/login" />} />
+      </Routes>
+    </Router>
   );
-}
+};
 
 export default App;

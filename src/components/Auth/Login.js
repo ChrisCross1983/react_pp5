@@ -1,25 +1,21 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
-import axiosInstance from "../../api/axios";
+import axiosInstance, { getCsrfToken } from "../../api/axios";
 import { Card, Button, Form, Alert } from "react-bootstrap";
 
 const Login = () => {
   const [errorMessage, setErrorMessage] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    getCsrfToken();
+  }, []);
+
   const {
     register,
     handleSubmit,
     formState: { errors },
   } = useForm();
-
-  const getCsrfToken = () => {
-    const csrfCookie = document.cookie
-      .split("; ")
-      .find((row) => row.startsWith("csrftoken="))
-      ?.split("=")[1];
-  
-    return csrfCookie || null;
-  };
 
   const onSubmit = async (data) => {
     console.log("Submitting data:", data);
@@ -27,17 +23,11 @@ const Login = () => {
     setErrorMessage(null);
   
     try {
-      const csrfToken = getCsrfToken();
-      if (!csrfToken) {
-        throw new Error("CSRF Token not found in cookies.");
-      }
-  
-      const response = await axiosInstance.post(
-        "/login/",
-        { username: data.username, password: data.password },
-        { headers: { "X-CSRFToken": csrfToken } }
-      );
-  
+      const response = await axiosInstance.post("/login/", {
+        username: data.username,
+        password: data.password,
+      });
+
       console.log("Response data:", response.data);
       alert("Login successful!");
     } catch (error) {
@@ -56,12 +46,7 @@ const Login = () => {
         <Card.Body>
           <Card.Title className="text-center mb-4">Login to Lucky Cat</Card.Title>
           {errorMessage && <Alert variant="danger">{errorMessage}</Alert>}
-          <Form
-            onSubmit={handleSubmit((data) => {
-              console.log("Form submitted with:", data);
-              onSubmit(data);
-            })}
-          >
+          <Form onSubmit={handleSubmit(onSubmit)}>
             <Form.Group className="mb-3">
               <Form.Label>Username</Form.Label>
               <Form.Control
@@ -93,9 +78,7 @@ const Login = () => {
             </Button>
           </Form>
           <div className="text-center mt-3">
-            <small>
-              Don't have an account? <a href="/register">Register here</a>
-            </small>
+            <small>Don't have an account? <a href="/register">Register here</a></small>
           </div>
         </Card.Body>
       </Card>

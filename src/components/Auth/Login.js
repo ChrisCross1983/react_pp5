@@ -12,24 +12,38 @@ const Login = () => {
     formState: { errors },
   } = useForm();
 
+  const getCsrfToken = () => {
+    const csrfCookie = document.cookie
+      .split("; ")
+      .find((row) => row.startsWith("csrftoken="))
+      ?.split("=")[1];
+  
+    return csrfCookie || null;
+  };
+
   const onSubmit = async (data) => {
     console.log("Submitting data:", data);
     setIsSubmitting(true);
     setErrorMessage(null);
+  
     try {
-      const response = await axiosInstance.post("/login/", {
-        username: data.username,
-        password: data.password,
-      });
+      const csrfToken = getCsrfToken();
+      if (!csrfToken) {
+        throw new Error("CSRF Token not found in cookies.");
+      }
+  
+      const response = await axiosInstance.post(
+        "/login/",
+        { username: data.username, password: data.password },
+        { headers: { "X-CSRFToken": csrfToken } }
+      );
+  
       console.log("Response data:", response.data);
-      localStorage.setItem("accessToken", response.data.access);
-      localStorage.setItem("refreshToken", response.data.refresh);
       alert("Login successful!");
     } catch (error) {
       console.error("Error:", error.response?.data || error.message);
       setErrorMessage(
-        error.response?.data?.detail ||
-          "Something went wrong. Please try again."
+        error.response?.data?.detail || "Something went wrong. Please try again."
       );
     } finally {
       setIsSubmitting(false);
@@ -38,14 +52,9 @@ const Login = () => {
 
   return (
     <div className="d-flex justify-content-center align-items-center vh-100 bg-light">
-      <Card
-        style={{ width: "100%", maxWidth: "400px" }}
-        className="p-4 shadow-sm"
-      >
+      <Card style={{ width: "100%", maxWidth: "400px" }} className="p-4 shadow-sm">
         <Card.Body>
-          <Card.Title className="text-center mb-4">
-            Login to Lucky Cat
-          </Card.Title>
+          <Card.Title className="text-center mb-4">Login to Lucky Cat</Card.Title>
           {errorMessage && <Alert variant="danger">{errorMessage}</Alert>}
           <Form
             onSubmit={handleSubmit((data) => {
@@ -79,12 +88,7 @@ const Login = () => {
               </Form.Control.Feedback>
             </Form.Group>
 
-            <Button
-              variant="primary"
-              type="submit"
-              className="w-100"
-              disabled={isSubmitting}
-            >
+            <Button variant="primary" type="submit" className="w-100" disabled={isSubmitting}>
               {isSubmitting ? "Logging in..." : "Login"}
             </Button>
           </Form>

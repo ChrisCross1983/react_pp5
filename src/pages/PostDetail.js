@@ -56,6 +56,9 @@ const PostDetail = () => {
   };
 
   const handleDeletePost = async () => {
+    const confirmDelete = window.confirm("Are you sure you want to delete this post?");
+    if (!confirmDelete) return;
+
     try {
       await axiosInstance.delete(`/posts/${id}/`);
       alert("Post deleted successfully.");
@@ -65,19 +68,16 @@ const PostDetail = () => {
     }
   };
 
-  const handleCommentSubmit = async (e) => {
-    e.preventDefault();
-    if (!newComment.trim()) return;
+  const handleDeleteComment = async (commentId) => {
+    const confirmDelete = window.confirm("Are you sure you want to delete this comment?");
+    if (!confirmDelete) return;
 
     try {
-      const response = await axiosInstance.post(`/posts/${id}/comments/`, {
-        content: newComment,
-      });
-
-      setComments([...comments, response.data]); 
-      setNewComment("");
+      await axiosInstance.delete(`/posts/comments/${commentId}/`);
+      setComments(comments.filter((c) => c.id !== commentId));
+      alert("Comment deleted successfully.");
     } catch (err) {
-      console.error("Error posting comment:", err);
+      console.error("Error deleting comment:", err);
     }
   };
 
@@ -90,6 +90,22 @@ const PostDetail = () => {
       setShowEditModal(false);
     } catch (err) {
       console.error("Error editing post:", err);
+    }
+  };
+
+  const handleCommentSubmit = async (e) => {
+    e.preventDefault();
+    if (!newComment.trim()) return;
+
+    try {
+      const response = await axiosInstance.post(`/posts/${id}/comments/`, {
+        content: newComment,
+      });
+
+      setComments([...comments, response.data]);
+      setNewComment("");
+    } catch (err) {
+      console.error("Error posting comment:", err);
     }
   };
 
@@ -150,10 +166,7 @@ const PostDetail = () => {
                         variant="outline-danger"
                         size="sm"
                         className="ms-2"
-                        onClick={() => {
-                          axiosInstance.delete(`/posts/comments/${comment.id}/`);
-                          setComments(comments.filter((c) => c.id !== comment.id));
-                        }}
+                        onClick={() => handleDeleteComment(comment.id)}
                       >
                         🗑 Delete
                       </Button>

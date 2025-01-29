@@ -1,16 +1,31 @@
 import React, { useEffect, useState } from "react";
-import { Navbar, Nav, Button, Container } from "react-bootstrap";
+import { Navbar, Nav, Button, Container, Badge } from "react-bootstrap";
 import { Link, useNavigate } from "react-router-dom";
 import axiosInstance from "../../api/axios";
 
 const Navigation = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [notifications, setNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
   const navigate = useNavigate();
 
   useEffect(() => {
     const token = localStorage.getItem("accessToken");
     setIsAuthenticated(!!token);
+    if (token) {
+      fetchNotifications();
+    }
   }, []);
+
+  const fetchNotifications = async () => {
+    try {
+      const response = await axiosInstance.get("/notifications/");
+      setNotifications(response.data);
+      setUnreadCount(response.data.filter((n) => !n.is_read).length);
+    } catch (error) {
+      console.error("Error fetching notifications:", error);
+    }
+  };
 
   const handleLogout = async () => {
     try {
@@ -33,6 +48,9 @@ const Navigation = () => {
           <Nav className="ms-auto">
             {isAuthenticated ? (
               <>
+                <Nav.Link as={Link} to="/notifications">
+                  🔔 Notifications {unreadCount > 0 && <Badge bg="danger">{unreadCount}</Badge>}
+                </Nav.Link>
                 <Nav.Link as={Link} to="/profile">Profile</Nav.Link>
                 <Button variant="outline-light" onClick={handleLogout}>Logout</Button>
               </>

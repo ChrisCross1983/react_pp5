@@ -6,6 +6,7 @@ import Register from "./components/Auth/Register";
 import Login from "./components/Auth/Login";
 import Navigation from "./components/Layout/Navbar";
 import Home from "./pages/Home";
+import Posts from "./pages/Posts";
 
 const isAuthenticated = !!localStorage.getItem("accessToken");
 const App = () => {
@@ -16,6 +17,7 @@ const App = () => {
         <Route path="/" element={<Home />} />
         <Route path="/register" element={isAuthenticated ? <Navigate to="/" /> : <Register />} />
         <Route path="/login" element={isAuthenticated ? <Navigate to="/" /> : <Login />} />
+        <Route path="/posts" element={<Posts />} />
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </Router>

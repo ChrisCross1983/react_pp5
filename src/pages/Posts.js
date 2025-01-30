@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Card, Button, Spinner, Alert, Form, Container, Row, Col } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import axiosInstance from "../api/axios";
@@ -11,11 +11,11 @@ const Posts = () => {
   const [category, setCategory] = useState("");
   const [sortOrder, setSortOrder] = useState("newest");
 
-  useEffect(() => {
-    fetchPosts();
-  }, [searchQuery, category, sortOrder]);
+  // State for Pagination
+  const [nextPage, setNextPage] = useState(null);
+  const [prevPage, setPrevPage] = useState(null);
 
-  const fetchPosts = async () => {
+  const fetchPosts = useCallback(async (url = "/posts/feed/") => {
     setLoading(true);
     try {
       const response = await axiosInstance.get("/posts/feed/", {
@@ -25,13 +25,20 @@ const Posts = () => {
           ordering: sortOrder === "newest" ? "-created_at" : "created_at",
         },
       });
+
       setPosts(response.data.results);
+      setNextPage(response.data.next);
+      setPrevPage(response.data.previous);
     } catch (err) {
       setError("Failed to load posts. Please try again later.");
     } finally {
       setLoading(false);
     }
-  };
+  }, [searchQuery, category, sortOrder]);
+
+  useEffect(() => {
+    fetchPosts();
+  }, [fetchPosts]);
 
   return (
     <Container className="mt-4">
@@ -81,6 +88,25 @@ const Posts = () => {
           </Card>
         ))
       )}
+
+      {/* Pagination Buttons */}
+      <div className="d-flex justify-content-between mt-4">
+        <Button 
+          variant="secondary" 
+          disabled={!prevPage} 
+          onClick={() => fetchPosts(prevPage)}
+        >
+          ⬅ Previous Page
+        </Button>
+        
+        <Button 
+          variant="secondary" 
+          disabled={!nextPage} 
+          onClick={() => fetchPosts(nextPage)}
+        >
+          Next Page ➡
+        </Button>
+      </div>
     </Container>
   );
 };

@@ -1,30 +1,11 @@
-import React, { useEffect, useState } from "react";
-import { Card, Button, Spinner, Alert, Container } from "react-bootstrap";
-import axiosInstance from "../api/axios";
+import React from "react";
+import { Container, Row, Col, Alert } from "react-bootstrap";
 import { Link } from "react-router-dom";
+import Posts from "./Posts";
+import TopFollowedUsers from "../components/TopFollowedUsers";
 
 const Home = () => {
-  const [posts, setPosts] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const isLoggedIn = !!localStorage.getItem("accessToken");
-
-  useEffect(() => {
-    if (isLoggedIn) {
-      fetchPosts();
-    }
-  }, [isLoggedIn]);
-
-  const fetchPosts = async () => {
-    try {
-      const response = await axiosInstance.get("/posts/feed/");
-      setPosts(response.data.results);
-    } catch (err) {
-      setError("Error loading posts.");
-    } finally {
-      setLoading(false);
-    }
-  };
 
   return (
     <Container className="mt-5">
@@ -38,34 +19,18 @@ const Home = () => {
           Please <Link to="/login">log in</Link> to view posts.
         </Alert>
       ) : (
-        <>
-          <div className="d-flex justify-content-between mb-3">
+        <Row>
+          {/* Post Feed */}
+          <Col md={8}>
             <h4>Latest Posts</h4>
-            <Button as={Link} to="/posts/new" variant="primary">
-              Create New Post
-            </Button>
-          </div>
+            <Posts /> {/* ✅ Component for Posts */}
+          </Col>
 
-          {loading ? (
-            <Spinner animation="border" />
-          ) : error ? (
-            <Alert variant="danger">{error}</Alert>
-          ) : posts.length === 0 ? (
-            <p>No posts found.</p>
-          ) : (
-            posts.map((post) => (
-              <Card key={post.id} className="mb-3">
-                <Card.Body>
-                  <Card.Title>{post.title}</Card.Title>
-                  <Card.Text>{post.description}</Card.Text>
-                  <Button as={Link} to={`/posts/${post.id}`} variant="outline-primary">
-                    View Details
-                  </Button>
-                </Card.Body>
-              </Card>
-            ))
-          )}
-        </>
+          {/* Sidebar with Top-Followed-Users */}
+          <Col md={4}>
+            <TopFollowedUsers />
+          </Col>
+        </Row>
       )}
     </Container>
   );

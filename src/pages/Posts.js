@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Card, Button, Spinner, Alert } from "react-bootstrap";
+import { Link } from "react-router-dom";
 import axiosInstance from "../api/axios";
 
 const Posts = () => {
@@ -10,8 +11,8 @@ const Posts = () => {
   useEffect(() => {
     const fetchPosts = async () => {
       try {
-        const response = await axiosInstance.get("/posts/");
-        setPosts(response.data);
+        const response = await axiosInstance.get("/posts/feed/");
+        setPosts(response.data.results);
       } catch (err) {
         setError("Failed to load posts. Please try again later.");
       } finally {
@@ -37,7 +38,7 @@ const Posts = () => {
             <Card.Body>
               <Card.Title>{post.title}</Card.Title>
               <Card.Text>{post.description}</Card.Text>
-              <Button variant="primary" href={`/posts/${post.id}`}>
+              <Button as={Link} to={`/posts/${post.id}`} variant="primary">
                 View Details
               </Button>
             </Card.Body>

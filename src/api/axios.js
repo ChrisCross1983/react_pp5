@@ -6,8 +6,9 @@ const axiosInstance = axios.create({
   withCredentials: true,
   headers: {
     "Content-Type": "application/json",
-  },
+},
 });
+
 export const getCsrfToken = async () => {
   try {
     const response = await axiosInstance.get("/auth/csrf/");

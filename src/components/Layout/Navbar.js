@@ -42,22 +42,38 @@ const Navigation = () => {
   return (
     <Navbar bg="dark" variant="dark" expand="lg">
       <Container>
-        <Navbar.Brand as={Link} to="/">Lucky Cat</Navbar.Brand>
+        <Navbar.Brand as={Link} to="/">
+          Lucky Cat
+        </Navbar.Brand>
         <Navbar.Toggle aria-controls="basic-navbar-nav" />
         <Navbar.Collapse id="basic-navbar-nav">
           <Nav className="ms-auto">
             {isAuthenticated ? (
               <>
-                <Nav.Link as={Link} to="/notifications">
-                  🔔 Notifications {unreadCount > 0 && <Badge bg="danger">{unreadCount}</Badge>}
+                {/* Bell appears, only if unread messages > 0 */}
+                {unreadCount > 0 && (
+                  <Nav.Link as={Link} to="/notifications" className="position-relative">
+                    🔔 Notifications
+                    <Badge bg="danger" className="ms-1">
+                      {unreadCount}
+                    </Badge>
+                  </Nav.Link>
+                )}
+                <Nav.Link as={Link} to="/profile">
+                  Profile
                 </Nav.Link>
-                <Nav.Link as={Link} to="/profile">Profile</Nav.Link>
-                <Button variant="outline-light" onClick={handleLogout}>Logout</Button>
+                <Button variant="outline-light" onClick={handleLogout}>
+                  Logout
+                </Button>
               </>
             ) : (
               <>
-                <Nav.Link as={Link} to="/login">Login</Nav.Link>
-                <Nav.Link as={Link} to="/register">Register</Nav.Link>
+                <Nav.Link as={Link} to="/login">
+                  Login
+                </Nav.Link>
+                <Nav.Link as={Link} to="/register">
+                  Register
+                </Nav.Link>
               </>
             )}
           </Nav>

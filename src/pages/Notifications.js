@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Card, Button, Spinner, Alert, Container } from "react-bootstrap";
-import axiosInstance from "../api/axios";
+import { axiosReq } from "../api/axios";
 
 const Notifications = () => {
   const [notifications, setNotifications] = useState([]);
@@ -13,7 +13,7 @@ const Notifications = () => {
 
   const fetchNotifications = async () => {
     try {
-      const response = await axiosInstance.get("/notifications/");
+      const response = await axiosReq.get("/notifications/");
       setNotifications(response.data);
     } catch (err) {
       setError("Error loading notifications.");
@@ -24,7 +24,7 @@ const Notifications = () => {
 
   const markAllAsRead = async () => {
     try {
-      await axiosInstance.post("/notifications/mark-all-read/");
+      await axiosReq.post("/notifications/mark-all-read/");
       setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
     } catch (err) {
       console.error("Error marking notifications as read:", err);

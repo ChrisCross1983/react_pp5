@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Card, Spinner, Alert } from "react-bootstrap";
-import axiosInstance from "../api/axios";
+import { axiosReq } from "../api/axios";
 import { Link } from "react-router-dom";
 
 const TopFollowedUsers = () => {
@@ -11,7 +11,7 @@ const TopFollowedUsers = () => {
   useEffect(() => {
     const fetchTopFollowedUsers = async () => {
       try {
-        const response = await axiosInstance.get("/profiles/top-followed/");
+        const response = await axiosReq.get("/profiles/top-followed/");
         setUsers(response.data);
       } catch (err) {
         setError("Failed to load top followed users.");

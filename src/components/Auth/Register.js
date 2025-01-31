@@ -1,16 +1,11 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { useForm } from "react-hook-form";
-import axiosInstance, { getCsrfToken } from "../../api/axios";
+import { axiosReq } from "../../api/axios";
 import { Card, Button, Form, Alert } from "react-bootstrap";
 
 const Register = () => {
   const [errorMessage, setErrorMessage] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  useEffect(() => {
-    getCsrfToken();
-  }, []);
-
   const { register, handleSubmit, formState: { errors } } = useForm();
 
   const onSubmit = async (data) => {
@@ -19,12 +14,12 @@ const Register = () => {
     setErrorMessage(null);
 
     try {
-      const response = await axiosInstance.post("/register/", {
+      const response = await axiosReq.post("/auth/registration/", {
         username: data.username,
         email: data.email,
         password1: data.password,
         password2: data.confirmPassword,
-      });
+      });      
 
       console.log("Response data:", response.data);
       alert("Registration successful!");

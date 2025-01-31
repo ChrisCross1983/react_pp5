@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
+import { axiosReq, axiosRes } from "../api/axios";
 import {
   Card,
   Button,
@@ -9,7 +10,6 @@ import {
   Modal,
   ListGroup,
 } from "react-bootstrap";
-import axiosInstance from "../api/axios";
 
 const Profile = () => {
   const { id } = useParams();
@@ -29,7 +29,7 @@ const Profile = () => {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const response = await axiosInstance.get(`/profiles/${id}/`);
+        const response = await axiosReq.get(`/profiles/${id}/`);
         setProfile(response.data);
         setBio(response.data.bio);
         setIsFollowing(response.data.is_following);
@@ -43,7 +43,7 @@ const Profile = () => {
 
     const fetchPosts = async () => {
       try {
-        const response = await axiosInstance.get(`/posts/?author=${id}`);
+        const response = await axiosReq.get(`/posts/?author=${id}`);
         setPosts(response.data);
       } catch (err) {
         console.error("Error loading posts:", err);
@@ -56,7 +56,7 @@ const Profile = () => {
 
   const handleFollowToggle = async () => {
     try {
-      await axiosInstance.post(`/profiles/${id}/follow/`);
+      await axiosReq.post(`/profiles/${id}/follow/`);
       setIsFollowing(!isFollowing);
       setFollowersCount((prev) => (isFollowing ? prev - 1 : prev + 1));
     } catch (err) {
@@ -66,7 +66,7 @@ const Profile = () => {
 
   const handleEditProfile = async () => {
     try {
-      const response = await axiosInstance.put(`/profiles/edit/`, {
+      const response = await axiosReq.put(`/profiles/edit/`, {
         bio: bio,
       });
       setProfile(response.data);
@@ -78,7 +78,7 @@ const Profile = () => {
 
   const fetchFollowers = async () => {
     try {
-      const response = await axiosInstance.get(`/profiles/${id}/followers/`);
+      const response = await axiosReq.get(`/profiles/${id}/followers/`);
       setFollowers(response.data);
       setShowFollowersModal(true);
     } catch (err) {
@@ -88,7 +88,7 @@ const Profile = () => {
 
   const fetchFollowing = async () => {
     try {
-      const response = await axiosInstance.get(`/profiles/${id}/following/`);
+      const response = await axiosReq.get(`/profiles/${id}/following/`);
       setFollowing(response.data);
       setShowFollowingModal(true);
     } catch (err) {

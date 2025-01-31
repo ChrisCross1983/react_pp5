@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Card, Button, Spinner, Alert, Form, Modal } from "react-bootstrap";
-import axiosInstance from "../api/axios";
+import { axiosReq } from "../api/axios";
 
 const PostDetail = () => {
   const { id } = useParams();
@@ -18,7 +18,7 @@ const PostDetail = () => {
   useEffect(() => {
     const fetchPost = async () => {
       try {
-        const response = await axiosInstance.get(`/posts/${id}/`);
+        const response = await axiosReq.get(`/posts/${id}/`);
         setPost(response.data);
       } catch (err) {
         setError("Failed to load the post. Please try again later.");
@@ -29,7 +29,7 @@ const PostDetail = () => {
 
     const fetchComments = async () => {
       try {
-        const response = await axiosInstance.get(`/posts/${id}/comments/`);
+        const response = await axiosReq.get(`/posts/${id}/comments/`);
         setComments(response.data);
       } catch (err) {
         console.error("Error loading comments:", err);
@@ -43,7 +43,7 @@ const PostDetail = () => {
   const handleLike = async () => {
     setIsLiking(true);
     try {
-      await axiosInstance.post(`/posts/${id}/like/`);
+      await axiosReq.post(`/posts/${id}/like/`);
       setPost((prevPost) => ({
         ...prevPost,
         likes_count: prevPost.likes_count + 1,
@@ -60,7 +60,7 @@ const PostDetail = () => {
     if (!confirmDelete) return;
 
     try {
-      await axiosInstance.delete(`/posts/${id}/`);
+      await axiosReq.delete(`/posts/${id}/`);
       alert("Post deleted successfully.");
       navigate("/");
     } catch (err) {
@@ -73,7 +73,7 @@ const PostDetail = () => {
     if (!confirmDelete) return;
 
     try {
-      await axiosInstance.delete(`/posts/comments/${commentId}/`);
+      await axiosReq.delete(`/posts/comments/${commentId}/`);
       setComments(comments.filter((c) => c.id !== commentId));
       alert("Comment deleted successfully.");
     } catch (err) {
@@ -83,7 +83,7 @@ const PostDetail = () => {
 
   const handleEditPost = async () => {
     try {
-      const response = await axiosInstance.put(`/posts/${id}/`, {
+      const response = await axiosReq.put(`/posts/${id}/`, {
         description: editContent,
       });
       setPost(response.data);
@@ -98,7 +98,7 @@ const PostDetail = () => {
     if (!newComment.trim()) return;
 
     try {
-      const response = await axiosInstance.post(`/posts/${id}/comments/`, {
+      const response = await axiosReq.post(`/posts/${id}/comments/`, {
         content: newComment,
       });
 

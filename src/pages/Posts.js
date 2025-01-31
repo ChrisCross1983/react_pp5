@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { Card, Button, Spinner, Alert, Form, Container, Row, Col } from "react-bootstrap";
 import { Link } from "react-router-dom";
-import axiosInstance from "../api/axios";
+import { axiosReq } from "../api/axios";
 
 const Posts = () => {
   const [posts, setPosts] = useState([]);
@@ -18,7 +18,7 @@ const Posts = () => {
   const fetchPosts = useCallback(async (url = "/posts/feed/") => {
     setLoading(true);
     try {
-      const response = await axiosInstance.get("/posts/feed/", {
+      const response = await axiosReq.get("/posts/feed/", {
         params: {
           search: searchQuery,
           category: category || undefined,

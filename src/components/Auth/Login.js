@@ -1,15 +1,11 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useForm } from "react-hook-form";
-import axiosInstance, { getCsrfToken } from "../../api/axios";
+import { axiosReq } from "../../api/axios";
 import { Card, Button, Form, Alert } from "react-bootstrap";
 
 const Login = () => {
   const [errorMessage, setErrorMessage] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  useEffect(() => {
-    getCsrfToken();
-  }, []);
 
   const {
     register,
@@ -23,7 +19,7 @@ const Login = () => {
     setErrorMessage(null);
 
     try {
-      const response = await axiosInstance.post("/auth/login/", {
+      const response = await axiosReq.post("/auth/login/", {
         email: data.email,
         password: data.password,
       });

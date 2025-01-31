@@ -1,35 +1,36 @@
 import React, { useEffect, useState } from "react";
 import { Navbar, Nav, Button, Container, Badge } from "react-bootstrap";
 import { Link, useNavigate } from "react-router-dom";
-import axiosInstance from "../../api/axios";
+import { useCallback } from "react";
+import { axiosReq } from "../../api/axios";
 
 const Navigation = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [notifications, setNotifications] = useState([]);
+  const [setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const navigate = useNavigate();
 
+  const fetchNotifications = useCallback(async () => {
+    try {
+      const response = await axiosReq.get("/notifications/");
+      setNotifications(response.data);
+      setUnreadCount(response.data.filter((n) => !n.is_read).length);
+    } catch (error) {
+      console.error("Error fetching notifications:", error);
+    }
+  }, [setNotifications, setUnreadCount]);
+  
   useEffect(() => {
     const token = localStorage.getItem("accessToken");
     setIsAuthenticated(!!token);
     if (token) {
       fetchNotifications();
     }
-  }, []);
-
-  const fetchNotifications = async () => {
-    try {
-      const response = await axiosInstance.get("/notifications/");
-      setNotifications(response.data);
-      setUnreadCount(response.data.filter((n) => !n.is_read).length);
-    } catch (error) {
-      console.error("Error fetching notifications:", error);
-    }
-  };
+  }, [fetchNotifications]);
 
   const handleLogout = async () => {
     try {
-      await axiosInstance.post("/logout/");
+      await axiosReq.post("/logout/");
       localStorage.removeItem("accessToken");
       localStorage.removeItem("refreshToken");
       setIsAuthenticated(false);

@@ -3,6 +3,7 @@ import { Button, Card, Tabs, Tab } from "react-bootstrap";
 import axios from "axios";
 import "react-toastify/dist/ReactToastify.css";
 import { toast } from "react-toastify";
+import { axiosReq } from "../api/axios";
 
 export default function SittingRequests() {
   const [receivedRequests, setReceivedRequests] = useState([]);
@@ -27,9 +28,16 @@ export default function SittingRequests() {
     setLoading(false);
   };
 
-  const handleRequestAction = async (requestId, action) => {
+  const handleRequestAction = async (requestId, action, recipientId) => {
     try {
-      await axios.post(`/api/posts/requests/manage/${requestId}/`, { action });
+      await axiosReq.post(`/api/posts/requests/manage/${requestId}/`, { action });
+
+      await axiosReq.post("/api/notifications/", {
+        recipient: recipientId,
+        message: `Your sitting request was ${action}ed.`,
+        type: "sitting_request",
+      });
+
       fetchRequests();
       toast.success(`Request ${action}ed successfully!`);
     } catch (error) {

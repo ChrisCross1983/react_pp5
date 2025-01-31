@@ -1,33 +1,31 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { Navbar, Nav, Button, Container, Badge } from "react-bootstrap";
 import { Link, useNavigate } from "react-router-dom";
-import { useCallback } from "react";
 import { axiosReq } from "../../api/axios";
 
 const Navigation = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [setNotifications] = useState([]);
+  const [notification, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [userId, setUserId] = useState(null);
   const navigate = useNavigate();
 
   const fetchNotifications = useCallback(async () => {
     try {
-      const response = await axiosReq.get("/notifications/");
+      const response = await axiosReq.get("/api/notifications/");
       setNotifications(response.data);
       setUnreadCount(response.data.filter((n) => !n.is_read).length);
     } catch (error) {
       console.error("Error fetching notifications:", error);
     }
-  }, [setNotifications, setUnreadCount]);
+  }, []);
 
   useEffect(() => {
     const token = localStorage.getItem("accessToken");
     setIsAuthenticated(!!token);
     if (token) {
       fetchNotifications();
-
-      axiosReq.get("/auth/user/")
+      axiosReq.get("/api/auth/user/")
         .then(response => setUserId(response.data.id))
         .catch(error => console.error("Error fetching user info:", error));
     }
@@ -35,7 +33,7 @@ const Navigation = () => {
 
   const handleLogout = async () => {
     try {
-      await axiosReq.post("/logout/");
+      await axiosReq.post("/api/logout/");
       localStorage.removeItem("accessToken");
       localStorage.removeItem("refreshToken");
       setIsAuthenticated(false);
@@ -56,22 +54,14 @@ const Navigation = () => {
           <Nav className="ms-auto">
             {isAuthenticated ? (
               <>
-                {/* 🔔 Notifications */}
-                {unreadCount > 0 && (
-                  <Nav.Link as={Link} to="/notifications" className="position-relative">
-                    🔔 Notifications
-                    <Badge bg="danger" className="ms-1">
-                      {unreadCount}
-                    </Badge>
-                  </Nav.Link>
-                )}
+                <Nav.Link as={Link} to="/notifications">
+                  🔔 Notifications {unreadCount > 0 && <Badge bg="danger">{unreadCount}</Badge>}
+                </Nav.Link>
 
-                {/* ✅ Sitting Requests Menu Point */}
                 <Nav.Link as={Link} to="/sitting-requests">
                   Sitting Requests
                 </Nav.Link>
 
-                {/* ✅ Profile-Link with User-ID */}
                 {userId && (
                   <Nav.Link as={Link} to={`/profile/${userId}`}>
                     Profile

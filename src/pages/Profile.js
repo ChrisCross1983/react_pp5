@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
-import { axiosReq, axiosRes } from "../api/axios";
+import { axiosReq } from "../api/axios";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   Card,
   Button,
@@ -10,6 +11,7 @@ import {
   Modal,
   ListGroup,
 } from "react-bootstrap";
+import SittingRequests from "./SittingRequests";
 
 const Profile = () => {
   const { id } = useParams();
@@ -141,22 +143,50 @@ const Profile = () => {
         </Card>
       )}
 
-      <h4 className="mt-4">User Posts</h4>
-      {posts.length === 0 ? (
-        <Alert variant="info">This user has no posts yet.</Alert>
-      ) : (
-        posts.map((post) => (
-          <Card key={post.id} className="mb-3 shadow-sm">
-            <Card.Body>
-              <Card.Title>{post.title}</Card.Title>
-              <Card.Text>{post.description}</Card.Text>
-              <Button variant="primary" href={`/posts/${post.id}`}>
-                View Details
-              </Button>
-            </Card.Body>
-          </Card>
-        ))
-      )}
+      {/* 🆕 Tabs for Posts, Followers and Sitting Requests */}
+      <Tabs defaultValue="posts" className="w-full mt-4">
+        <TabsList>
+          <TabsTrigger value="posts">Posts</TabsTrigger>
+          <TabsTrigger value="followers">Followers</TabsTrigger>
+          <TabsTrigger value="sitting_requests">Sitting Requests</TabsTrigger> {/* ✅ Neuer Tab */}
+        </TabsList>
+
+        <TabsContent value="posts">
+          <h4 className="mt-4">User Posts</h4>
+          {posts.length === 0 ? (
+            <Alert variant="info">This user has no posts yet.</Alert>
+          ) : (
+            posts.map((post) => (
+              <Card key={post.id} className="mb-3 shadow-sm">
+                <Card.Body>
+                  <Card.Title>{post.title}</Card.Title>
+                  <Card.Text>{post.description}</Card.Text>
+                  <Button variant="primary" href={`/posts/${post.id}`}>
+                    View Details
+                  </Button>
+                </Card.Body>
+              </Card>
+            ))
+          )}
+        </TabsContent>
+
+        <TabsContent value="followers">
+          <h4 className="mt-4">Followers</h4>
+          {followers.length === 0 ? (
+            <Alert variant="info">No followers yet.</Alert>
+          ) : (
+            <ListGroup>
+              {followers.map((user) => (
+                <ListGroup.Item key={user.id}>{user.username}</ListGroup.Item>
+              ))}
+            </ListGroup>
+          )}
+        </TabsContent>
+
+        <TabsContent value="sitting_requests">
+          <SittingRequests /> {/* ✅ Sitting Requests Tab */}
+        </TabsContent>
+      </Tabs>
 
       {/* Edit Profile Modal */}
       <Modal show={showEditModal} onHide={() => setShowEditModal(false)}>

@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { axiosReq } from "../../api/axios";
+import axios from "axios";
 
 export default function SittingRequests() {
   const [receivedRequests, setReceivedRequests] = useState([]);
@@ -16,8 +16,8 @@ export default function SittingRequests() {
   const fetchRequests = async () => {
     setLoading(true);
     try {
-      const receivedRes = await axiosReq.get("/posts/requests/incoming/");
-      const sentRes = await axiosReq.get("/posts/requests/sent/");
+      const receivedRes = await axios.get("/api/posts/requests/incoming/");
+      const sentRes = await axios.get("/api/posts/requests/sent/");
       setReceivedRequests(receivedRes.data);
       setSentRequests(sentRes.data);
     } catch (error) {
@@ -28,7 +28,7 @@ export default function SittingRequests() {
 
   const handleRequestAction = async (requestId, action) => {
     try {
-      await axiosReq.post(`/posts/requests/manage/${requestId}/`, { action });
+      await axios.post(`/api/posts/requests/manage/${requestId}/`, { action });
       fetchRequests();
     } catch (error) {
       console.error("Error updating request", error);
@@ -43,8 +43,6 @@ export default function SittingRequests() {
           <TabsTrigger value="received">Received Requests</TabsTrigger>
           <TabsTrigger value="sent">Sent Requests</TabsTrigger>
         </TabsList>
-
-        {/* 📩 Received Requests */}
         <TabsContent value="received">
           {loading ? (
             <p>Loading...</p>
@@ -60,10 +58,10 @@ export default function SittingRequests() {
                   {request.status === "pending" && (
                     <div className="space-x-2">
                       <Button onClick={() => handleRequestAction(request.id, "accept")}>
-                        ✅ Accept
+                        Accept
                       </Button>
                       <Button variant="destructive" onClick={() => handleRequestAction(request.id, "decline")}>
-                        ❌ Decline
+                        Decline
                       </Button>
                     </div>
                   )}
@@ -74,8 +72,6 @@ export default function SittingRequests() {
             <p>No received requests.</p>
           )}
         </TabsContent>
-
-        {/* 📤 Sent Requests */}
         <TabsContent value="sent">
           {loading ? (
             <p>Loading...</p>

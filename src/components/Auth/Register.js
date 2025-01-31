@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
-import { axiosReq } from "../../api/axios";
+import { axiosReq, getCsrfToken } from "../../api/axios";
 import { Card, Button, Form, Alert } from "react-bootstrap";
 
 const Register = () => {
@@ -12,22 +12,26 @@ const Register = () => {
     console.log("Submitting data:", data);
     setIsSubmitting(true);
     setErrorMessage(null);
-
+  
     try {
+      const csrfToken = await getCsrfToken();
+      if (!csrfToken) throw new Error("CSRF-Token konnte nicht abgerufen werden.");
+  
       const response = await axiosReq.post("/auth/registration/", {
         username: data.username,
         email: data.email,
         password1: data.password,
         password2: data.confirmPassword,
-      });      
-
-      console.log("Response data:", response.data);
+      }, {
+        headers: { "X-CSRFToken": csrfToken }
+      });
+  
+      console.log("✅ Registration succesful:", response.data);
       alert("Registration successful!");
     } catch (error) {
-      console.error("Error:", error.response?.data || error.message);
+      console.error("❌ Error:", error.response?.data || error.message);
       setErrorMessage(
-        error.response?.data?.detail ||
-          "Something went wrong. Please try again."
+        error.response?.data?.detail || "Hoops, something went wrong, please try again."
       );
     } finally {
       setIsSubmitting(false);

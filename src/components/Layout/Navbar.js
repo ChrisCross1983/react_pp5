@@ -6,8 +6,9 @@ import { axiosReq } from "../../api/axios";
 
 const Navigation = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [setNotifications] = useState([]);
+  const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [userId, setUserId] = useState(null);
   const navigate = useNavigate();
 
   const fetchNotifications = useCallback(async () => {
@@ -18,13 +19,17 @@ const Navigation = () => {
     } catch (error) {
       console.error("Error fetching notifications:", error);
     }
-  }, [setNotifications, setUnreadCount]);
-  
+  }, []);
+
   useEffect(() => {
     const token = localStorage.getItem("accessToken");
     setIsAuthenticated(!!token);
     if (token) {
       fetchNotifications();
+
+      axiosReq.get("/auth/user/")
+        .then(response => setUserId(response.data.id))
+        .catch(error => console.error("Error fetching user info:", error));
     }
   }, [fetchNotifications]);
 
@@ -51,7 +56,7 @@ const Navigation = () => {
           <Nav className="ms-auto">
             {isAuthenticated ? (
               <>
-                {/* Bell appears, only if unread messages > 0 */}
+                {/* 🔔 Notifications */}
                 {unreadCount > 0 && (
                   <Nav.Link as={Link} to="/notifications" className="position-relative">
                     🔔 Notifications
@@ -60,9 +65,19 @@ const Navigation = () => {
                     </Badge>
                   </Nav.Link>
                 )}
-                <Nav.Link as={Link} to="/profile">
-                  Profile
+
+                {/* ✅ Sitting Requests Menu Point */}
+                <Nav.Link as={Link} to="/sitting-requests">
+                  Sitting Requests
                 </Nav.Link>
+
+                {/* ✅ Profile-Link with User-ID */}
+                {userId && (
+                  <Nav.Link as={Link} to={`/profile/${userId}`}>
+                    Profile
+                  </Nav.Link>
+                )}
+
                 <Button variant="outline-light" onClick={handleLogout}>
                   Logout
                 </Button>

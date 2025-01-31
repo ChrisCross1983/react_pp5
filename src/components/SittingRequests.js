@@ -3,6 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import axios from "axios";
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 export default function SittingRequests() {
   const [receivedRequests, setReceivedRequests] = useState([]);
@@ -30,8 +32,10 @@ export default function SittingRequests() {
     try {
       await axios.post(`/api/posts/requests/manage/${requestId}/`, { action });
       fetchRequests();
+      toast.success(`Request ${action}ed successfully!`);
     } catch (error) {
       console.error("Error updating request", error);
+      toast.error("Failed to update request");
     }
   };
 

@@ -1,10 +1,8 @@
-import { useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import React, { useEffect, useState } from "react";
+import { Button, Card, Tabs, Tab } from "react-bootstrap";
 import axios from "axios";
-import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { toast } from "react-toastify";
 
 export default function SittingRequests() {
   const [receivedRequests, setReceivedRequests] = useState([]);
@@ -24,6 +22,7 @@ export default function SittingRequests() {
       setSentRequests(sentRes.data);
     } catch (error) {
       console.error("Error fetching requests", error);
+      toast.error("Failed to update request");
     }
     setLoading(false);
   };
@@ -40,20 +39,16 @@ export default function SittingRequests() {
   };
 
   return (
-    <div className="p-6">
+    <div className="p-4">
       <h2 className="text-xl font-bold mb-4">Sitting Requests</h2>
-      <Tabs defaultValue="received" className="w-full">
-        <TabsList>
-          <TabsTrigger value="received">Received Requests</TabsTrigger>
-          <TabsTrigger value="sent">Sent Requests</TabsTrigger>
-        </TabsList>
-        <TabsContent value="received">
+      <Tabs defaultActiveKey="received" id="sitting-requests-tabs">
+        <Tab eventKey="received" title="Received Requests">
           {loading ? (
             <p>Loading...</p>
           ) : receivedRequests.length > 0 ? (
             receivedRequests.map((request) => (
               <Card key={request.id} className="mb-4">
-                <CardContent className="flex justify-between items-center">
+                <Card.Body className="d-flex justify-content-between align-items-center">
                   <div>
                     <p><strong>From:</strong> {request.sender.username}</p>
                     <p><strong>Message:</strong> {request.message}</p>
@@ -64,35 +59,41 @@ export default function SittingRequests() {
                       <Button onClick={() => handleRequestAction(request.id, "accept")}>
                         Accept
                       </Button>
-                      <Button variant="destructive" onClick={() => handleRequestAction(request.id, "decline")}>
+                      <Button variant="danger" onClick={() => handleRequestAction(request.id, "decline")}>
                         Decline
                       </Button>
                     </div>
                   )}
-                </CardContent>
+                </Card.Body>
               </Card>
             ))
           ) : (
             <p>No received requests.</p>
           )}
-        </TabsContent>
-        <TabsContent value="sent">
+        </Tab>
+
+        <Tab eventKey="sent" title="Sent Requests">
           {loading ? (
             <p>Loading...</p>
           ) : sentRequests.length > 0 ? (
             sentRequests.map((request) => (
               <Card key={request.id} className="mb-4">
-                <CardContent>
+                <Card.Body>
                   <p><strong>To:</strong> {request.receiver.username}</p>
                   <p><strong>Message:</strong> {request.message}</p>
                   <p><strong>Status:</strong> {request.status}</p>
-                </CardContent>
+                  {request.status === "pending" && (
+                    <Button variant="warning" onClick={() => handleRequestAction(request.id, "cancel")}>
+                      Cancel Request
+                    </Button>
+                  )}
+                </Card.Body>
               </Card>
             ))
           ) : (
             <p>No sent requests.</p>
           )}
-        </TabsContent>
+        </Tab>
       </Tabs>
     </div>
   );

@@ -6,7 +6,7 @@ import { axiosReq } from "../../api/axios";
 
 const Navigation = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [notifications, setNotifications] = useState([]);
+  const [setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [userId, setUserId] = useState(null);
   const navigate = useNavigate();
@@ -19,7 +19,7 @@ const Navigation = () => {
     } catch (error) {
       console.error("Error fetching notifications:", error);
     }
-  }, []);
+  }, [setNotifications, setUnreadCount]);
 
   useEffect(() => {
     const token = localStorage.getItem("accessToken");

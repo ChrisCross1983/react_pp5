@@ -1,7 +1,6 @@
 import './App.css';
 import React from "react";
-import { Navigate } from "react-router-dom";
-import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
+import { BrowserRouter as Router, Route, Routes, Navigate } from "react-router-dom";
 import Register from "./components/Auth/Register";
 import Login from "./components/Auth/Login";
 import Navigation from "./components/Layout/Navbar";

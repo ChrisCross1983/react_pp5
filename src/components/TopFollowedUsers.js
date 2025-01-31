@@ -1,10 +1,9 @@
+import React from "react";
 import { useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { axiosReq } from "../../api/axios";
+import { Button, Card, Tabs, Tab } from "react-bootstrap";
+import { axiosReq } from "../api/axios";
 
-export default function SittingRequests() {
+export default function TopFollowedUsers() {
   const [receivedRequests, setReceivedRequests] = useState([]);
   const [sentRequests, setSentRequests] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -38,20 +37,14 @@ export default function SittingRequests() {
   return (
     <div className="p-6">
       <h2 className="text-xl font-bold mb-4">Sitting Requests</h2>
-      <Tabs defaultValue="received" className="w-full">
-        <TabsList>
-          <TabsTrigger value="received">Received Requests</TabsTrigger>
-          <TabsTrigger value="sent">Sent Requests</TabsTrigger>
-        </TabsList>
-
-        {/* 📩 Received Requests */}
-        <TabsContent value="received">
+      <Tabs defaultActiveKey="received" id="sitting-requests-tabs">
+        <Tab eventKey="received" title="Received Requests">
           {loading ? (
             <p>Loading...</p>
           ) : receivedRequests.length > 0 ? (
             receivedRequests.map((request) => (
               <Card key={request.id} className="mb-4">
-                <CardContent className="flex justify-between items-center">
+                <Card.Body className="d-flex justify-content-between align-items-center">
                   <div>
                     <p><strong>From:</strong> {request.sender.username}</p>
                     <p><strong>Message:</strong> {request.message}</p>
@@ -62,37 +55,36 @@ export default function SittingRequests() {
                       <Button onClick={() => handleRequestAction(request.id, "accept")}>
                         ✅ Accept
                       </Button>
-                      <Button variant="destructive" onClick={() => handleRequestAction(request.id, "decline")}>
+                      <Button variant="danger" onClick={() => handleRequestAction(request.id, "decline")}>
                         ❌ Decline
                       </Button>
                     </div>
                   )}
-                </CardContent>
+                </Card.Body>
               </Card>
             ))
           ) : (
             <p>No received requests.</p>
           )}
-        </TabsContent>
+        </Tab>
 
-        {/* 📤 Sent Requests */}
-        <TabsContent value="sent">
+        <Tab eventKey="sent" title="Sent Requests">
           {loading ? (
             <p>Loading...</p>
           ) : sentRequests.length > 0 ? (
             sentRequests.map((request) => (
               <Card key={request.id} className="mb-4">
-                <CardContent>
+                <Card.Body>
                   <p><strong>To:</strong> {request.receiver.username}</p>
                   <p><strong>Message:</strong> {request.message}</p>
                   <p><strong>Status:</strong> {request.status}</p>
-                </CardContent>
+                </Card.Body>
               </Card>
             ))
           ) : (
             <p>No sent requests.</p>
           )}
-        </TabsContent>
+        </Tab>
       </Tabs>
     </div>
   );

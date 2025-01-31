@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { axiosReq } from "../api/axios";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   Card,
   Button,
@@ -10,8 +9,10 @@ import {
   Form,
   Modal,
   ListGroup,
+  Tabs,
+  Tab,
 } from "react-bootstrap";
-import SittingRequests from "./SittingRequests";
+import SittingRequests from "../components/SittingRequests";
 
 const Profile = () => {
   const { id } = useParams();
@@ -27,6 +28,8 @@ const Profile = () => {
   const [showFollowingModal, setShowFollowingModal] = useState(false);
   const [followers, setFollowers] = useState([]);
   const [following, setFollowing] = useState([]);
+  const [receivedRequests, setReceivedRequests] = useState(0);
+  const [sentRequests, setSentRequests] = useState(0);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -52,8 +55,20 @@ const Profile = () => {
       }
     };
 
+    const fetchSittingRequests = async () => {
+      try {
+        const receivedRes = await axiosReq.get("/posts/requests/incoming/");
+        const sentRes = await axiosReq.get("/posts/requests/sent/");
+        setReceivedRequests(receivedRes.data.length);
+        setSentRequests(sentRes.data.length);
+      } catch (err) {
+        console.error("Error fetching sitting requests:", err);
+      }
+    };
+
     fetchProfile();
     fetchPosts();
+    fetchSittingRequests();
   }, [id]);
 
   const handleFollowToggle = async () => {
@@ -122,6 +137,9 @@ const Profile = () => {
               <Button variant="link" onClick={fetchFollowing}>
                 Following: {profile.following_count}
               </Button>
+              <p>
+                <strong>Sitting Requests:</strong> Received: {receivedRequests} | Sent: {sentRequests}
+              </p>
             </div>
 
             {profile.is_owner ? (
@@ -144,14 +162,8 @@ const Profile = () => {
       )}
 
       {/* 🆕 Tabs for Posts, Followers and Sitting Requests */}
-      <Tabs defaultValue="posts" className="w-full mt-4">
-        <TabsList>
-          <TabsTrigger value="posts">Posts</TabsTrigger>
-          <TabsTrigger value="followers">Followers</TabsTrigger>
-          <TabsTrigger value="sitting_requests">Sitting Requests</TabsTrigger> {/* ✅ Neuer Tab */}
-        </TabsList>
-
-        <TabsContent value="posts">
+      <Tabs defaultActiveKey="posts" className="mt-4">
+        <Tab eventKey="posts" title="User Posts">
           <h4 className="mt-4">User Posts</h4>
           {posts.length === 0 ? (
             <Alert variant="info">This user has no posts yet.</Alert>
@@ -168,10 +180,9 @@ const Profile = () => {
               </Card>
             ))
           )}
-        </TabsContent>
+        </Tab>
 
-        <TabsContent value="followers">
-          <h4 className="mt-4">Followers</h4>
+        <Tab eventKey="followers" title="Followers">
           {followers.length === 0 ? (
             <Alert variant="info">No followers yet.</Alert>
           ) : (
@@ -181,11 +192,11 @@ const Profile = () => {
               ))}
             </ListGroup>
           )}
-        </TabsContent>
+        </Tab>
 
-        <TabsContent value="sitting_requests">
-          <SittingRequests /> {/* ✅ Sitting Requests Tab */}
-        </TabsContent>
+        <Tab eventKey="sitting-requests" title="Sitting Requests">
+          <SittingRequests />
+        </Tab>
       </Tabs>
 
       {/* Edit Profile Modal */}

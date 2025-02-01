@@ -7,15 +7,12 @@ axios.defaults.withCredentials = true;
 export const axiosReq = axios.create();
 export const axiosRes = axios.create();
 
-export const getCsrfToken = async () => {
-  try {
-    const response = await axios.get("/auth/csrf/");
-    const csrfToken = response.data.csrfToken;
-    axios.defaults.headers.common["X-CSRFToken"] = csrfToken;
-    console.log("✅ CSRF-Token gesetzt:", csrfToken);
-    return csrfToken;
-  } catch (error) {
-    console.error("❌ CSRF-Token Fehler:", error.response?.data || error.message);
-    return null;
-  }
-};
+//export const getCsrfToken = async () => {
+//  try {
+//    const response = await axios.get("/auth/csrf/");
+//    return response.data.csrfToken;
+//  } catch (error) {
+//    console.error("CSRF-Token cannot been called", error);
+//    return null;
+//  }
+//};

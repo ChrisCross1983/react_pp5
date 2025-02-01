@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
-import { axiosReq, getCsrfToken } from "../../api/axios";
+import { axiosReq } from "../../api/axios";
 import { Card, Button, Form, Alert } from "react-bootstrap";
 
 const Register = () => {
@@ -14,7 +14,7 @@ const Register = () => {
     setErrorMessage(null);
   
     try {
-      const csrfToken = await getCsrfToken();
+      const csrfToken = document.cookie.match(/csrftoken=([^;]*)/)?.[1];
       if (!csrfToken) throw new Error("CSRF-Token konnte nicht abgerufen werden.");
   
       const response = await axiosReq.post("/auth/registration/", {

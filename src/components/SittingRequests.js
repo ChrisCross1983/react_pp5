@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import { Button, Card, Tabs, Tab } from "react-bootstrap";
-import axios from "axios";
 import "react-toastify/dist/ReactToastify.css";
 import { toast } from "react-toastify";
 import { axiosReq } from "../api/axios";
@@ -17,8 +16,8 @@ export default function SittingRequests() {
   const fetchRequests = async () => {
     setLoading(true);
     try {
-      const receivedRes = await axios.get("/api/posts/requests/incoming/");
-      const sentRes = await axios.get("/api/posts/requests/sent/");
+      const receivedRes = await axiosReq.get("/posts/requests/incoming/");
+      const sentRes = await axiosReq.get("/posts/requests/sent/");
       setReceivedRequests(receivedRes.data);
       setSentRequests(sentRes.data);
     } catch (error) {

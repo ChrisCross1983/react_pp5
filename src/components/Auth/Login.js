@@ -2,10 +2,12 @@ import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { axiosReq } from "../../api/axios";
 import { Card, Button, Form, Alert } from "react-bootstrap";
+import { useNavigate } from "react-router-dom";
 
 const Login = () => {
   const [errorMessage, setErrorMessage] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const navigate = useNavigate();
 
   const {
     register,
@@ -20,14 +22,22 @@ const Login = () => {
 
     try {
       const response = await axiosReq.post("/auth/login/", {
-        email: data.email,
+        username: data.username,
         password: data.password,
       });
 
-      console.log("Response data:", response.data);
+      console.log("✅ Login erfolgreich:", response.data);
+      
+      // Token speichern
+      localStorage.setItem("accessToken", response.data.key);
+
+      // Manuell ein "storage"-Event feuern, um Navbar zu aktualisieren
+      window.dispatchEvent(new Event("storage"));
+
       alert("Login successful!");
+      navigate("/");
     } catch (error) {
-      console.error("Error:", error.response?.data || error.message);
+      console.error("❌ Fehler:", error.response?.data || error.message);
       setErrorMessage(
         error.response?.data?.detail ||
           "Something went wrong. Please try again."
@@ -39,10 +49,7 @@ const Login = () => {
 
   return (
     <div className="d-flex justify-content-center align-items-center vh-100 bg-light">
-      <Card
-        style={{ width: "100%", maxWidth: "400px" }}
-        className="p-4 shadow-sm"
-      >
+      <Card style={{ width: "100%", maxWidth: "400px" }} className="p-4 shadow-sm">
         <Card.Body>
           <Card.Title className="text-center mb-4">
             Login to Lucky Cat
@@ -50,15 +57,15 @@ const Login = () => {
           {errorMessage && <Alert variant="danger">{errorMessage}</Alert>}
           <Form onSubmit={handleSubmit(onSubmit)}>
             <Form.Group className="mb-3">
-              <Form.Label>Email</Form.Label>
+              <Form.Label>Username</Form.Label>
               <Form.Control
-                type="email"
-                placeholder="Enter your email"
-                {...register("email", { required: "Email is required" })}
-                isInvalid={!!errors.email}
+                type="text"
+                placeholder="Enter your username"
+                {...register("username", { required: "Username is required" })}
+                isInvalid={!!errors.username}
               />
               <Form.Control.Feedback type="invalid">
-                {errors.email?.message}
+                {errors.username?.message}
               </Form.Control.Feedback>
             </Form.Group>
 
@@ -75,12 +82,7 @@ const Login = () => {
               </Form.Control.Feedback>
             </Form.Group>
 
-            <Button
-              variant="primary"
-              type="submit"
-              className="w-100"
-              disabled={isSubmitting}
-            >
+            <Button variant="primary" type="submit" className="w-100" disabled={isSubmitting}>
               {isSubmitting ? "Logging in..." : "Login"}
             </Button>
           </Form>

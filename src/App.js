@@ -1,4 +1,3 @@
-import './App.css';
 import React from "react";
 import { BrowserRouter as Router, Route, Routes, Navigate } from "react-router-dom";
 import Register from "./components/Auth/Register";
@@ -10,8 +9,11 @@ import Home from "./pages/Home";
 import Posts from "./pages/Posts";
 import PostDetail from "./pages/PostDetail";
 import Profile from "./pages/Profile";
+import './App.css';
 
 const isAuthenticated = !!localStorage.getItem("accessToken");
+
+console.log("🚀 Posts importiert:", Posts);
 
 const App = () => {
   return (

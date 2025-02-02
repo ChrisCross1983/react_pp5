@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { Navbar, Nav, Button, Container, Badge } from "react-bootstrap";
 import { Link, useNavigate } from "react-router-dom";
-import { axiosReq } from "../../api/axios";
+import { axiosReq, getCsrfToken } from "../../api/axios";
 
 const Navigation = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -23,23 +23,37 @@ const Navigation = () => {
   useEffect(() => {
     const token = localStorage.getItem("accessToken");
     setIsAuthenticated(!!token);
+  
     if (token) {
       fetchNotifications();
       axiosReq.get("/api/auth/user/")
         .then(response => setUserId(response.data.id))
         .catch(error => console.error("Error fetching user info:", error));
     }
+  
+    const handleStorageChange = () => {
+      setIsAuthenticated(!!localStorage.getItem("accessToken"));
+    };
+  
+    window.addEventListener("storage", handleStorageChange);
+    return () => window.removeEventListener("storage", handleStorageChange);
   }, [fetchNotifications]);
 
   const handleLogout = async () => {
     try {
-      await axiosReq.post("/api/logout/");
+      const csrfToken = await getCsrfToken();
+      await axiosReq.post("/auth/logout/", null, {
+        headers: {
+          "X-CSRFToken": csrfToken,
+        },
+      });
+      
       localStorage.removeItem("accessToken");
       localStorage.removeItem("refreshToken");
       setIsAuthenticated(false);
-      navigate("/login");
+      window.location.href = "/login";
     } catch (error) {
-      console.error("Logout failed:", error);
+      console.error("Logout failed:", error.response?.data || error.message);
     }
   };
 

@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
-import { axiosReq } from "../../api/axios";
+import { axiosReq, getCsrfToken } from "../../api/axios";
 import { Card, Button, Form, Alert } from "react-bootstrap";
 
 const Register = () => {
@@ -14,24 +14,30 @@ const Register = () => {
     setErrorMessage(null);
   
     try {
-      const csrfToken = document.cookie.match(/csrftoken=([^;]*)/)?.[1];
-      if (!csrfToken) throw new Error("CSRF-Token konnte nicht abgerufen werden.");
+      const csrfToken = await getCsrfToken();
+      if (!csrfToken) throw new Error("CSRF-Token cannot been called.");
   
-      const response = await axiosReq.post("/auth/registration/", {
-        username: data.username,
-        email: data.email,
-        password1: data.password,
-        password2: data.confirmPassword,
-      }, {
-        headers: { "X-CSRFToken": csrfToken }
-      });
+      const response = await axiosReq.post(
+        "/auth/registration/",
+        {
+          username: data.username,
+          email: data.email,
+          password1: data.password,
+          password2: data.confirmPassword,
+        },
+        {
+          headers: {
+            "X-CSRFToken": csrfToken,
+          },
+        }
+      );
   
-      console.log("✅ Registration succesful:", response.data);
+      console.log("✅ Registration successful:", response.data);
       alert("Registration successful!");
     } catch (error) {
       console.error("❌ Error:", error.response?.data || error.message);
       setErrorMessage(
-        error.response?.data?.detail || "Hoops, something went wrong, please try again."
+        error.response?.data?.detail || "Oops, something went wrong, please try again."
       );
     } finally {
       setIsSubmitting(false);

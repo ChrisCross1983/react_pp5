@@ -2,6 +2,7 @@ import React from "react";
 import { BrowserRouter as Router, Route, Routes, Navigate } from "react-router-dom";
 import Register from "./components/Auth/Register";
 import Login from "./components/Auth/Login";
+import ResendEmail from "./components/Auth/ResendEmail";
 import Navigation from "./components/Layout/Navbar";
 import SittingRequests from "./components/SittingRequests";
 import Notifications from "./pages/Notifications";
@@ -23,6 +24,7 @@ const App = () => {
         <Route path="/" element={<Home />} />
         <Route path="/register" element={isAuthenticated ? <Navigate to="/" /> : <Register />} />
         <Route path="/login" element={isAuthenticated ? <Navigate to="/" /> : <Login />} />
+        <Route path="/resend-email" element={<ResendEmail />} />
         <Route path="/posts" element={<Posts />} />
         <Route path="/posts/:id" element={<PostDetail />} />
         <Route path="/profile/:id" element={<Profile />} />

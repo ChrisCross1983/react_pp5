@@ -2,21 +2,31 @@ import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { axiosReq, getCsrfToken } from "../../api/axios";
 import { Card, Button, Form, Alert } from "react-bootstrap";
+import { useNavigate } from "react-router-dom";
 
 const Register = () => {
   const [errorMessage, setErrorMessage] = useState(null);
+  const [successMessage, setSuccessMessage] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { register, handleSubmit, formState: { errors } } = useForm();
+  const navigate = useNavigate();
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm();
 
   const onSubmit = async (data) => {
-    console.log("Submitting data:", data);
+    console.log("🚀 Submitting data:", data);
     setIsSubmitting(true);
     setErrorMessage(null);
-  
+    setSuccessMessage(null);
+
     try {
       const csrfToken = await getCsrfToken();
-      if (!csrfToken) throw new Error("CSRF-Token cannot been called.");
-  
+      if (!csrfToken) throw new Error("CSRF token could not be retrieved.");
+
       const response = await axiosReq.post(
         "/auth/registration/",
         {
@@ -31,14 +41,24 @@ const Register = () => {
           },
         }
       );
-  
+
       console.log("✅ Registration successful:", response.data);
-      alert("Registration successful!");
-    } catch (error) {
-      console.error("❌ Error:", error.response?.data || error.message);
-      setErrorMessage(
-        error.response?.data?.detail || "Oops, something went wrong, please try again."
+      setSuccessMessage(
+        "Registration successful! A verification email has been sent to your email address. Please check your inbox."
       );
+
+      reset();
+
+      setTimeout(() => navigate("/login"), 3000);
+    } catch (error) {
+      console.error("❌ Registration failed:", error.response?.data || error.message);
+
+      if (error.response?.data) {
+        const errorMessages = Object.values(error.response.data).flat();
+        setErrorMessage(errorMessages.join(" "));
+      } else {
+        setErrorMessage("Oops, something went wrong. Please try again.");
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -49,7 +69,10 @@ const Register = () => {
       <Card style={{ width: "100%", maxWidth: "400px" }} className="p-4 shadow-sm">
         <Card.Body>
           <Card.Title className="text-center mb-4">Register for Lucky Cat</Card.Title>
+
           {errorMessage && <Alert variant="danger">{errorMessage}</Alert>}
+          {successMessage && <Alert variant="success">{successMessage}</Alert>}
+
           <Form onSubmit={handleSubmit(onSubmit)}>
             <Form.Group className="mb-3">
               <Form.Label>Username</Form.Label>
@@ -107,6 +130,7 @@ const Register = () => {
               {isSubmitting ? "Registering..." : "Register"}
             </Button>
           </Form>
+          
           <div className="text-center mt-3">
             <small>Already have an account? <a href="/login">Login here</a></small>
           </div>

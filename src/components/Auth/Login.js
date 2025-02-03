@@ -1,13 +1,22 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
-import { axiosReq } from "../../api/axios";
+import { axiosReq, getCsrfToken } from "../../api/axios";
 import { Card, Button, Form, Alert } from "react-bootstrap";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 
 const Login = () => {
   const [errorMessage, setErrorMessage] = useState(null);
+  const [successMessage, setSuccessMessage] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Check for verification success message
+  useEffect(() => {
+    if (location.state?.message) {
+      setSuccessMessage(location.state.message);
+    }
+  }, [location]);
 
   const {
     register,
@@ -19,25 +28,37 @@ const Login = () => {
     console.log("Submitting data:", data);
     setIsSubmitting(true);
     setErrorMessage(null);
+    setSuccessMessage(null);
 
     try {
-      const response = await axiosReq.post("/auth/login/", {
-        username: data.username,
-        password: data.password,
-      });
+      const csrfToken = await getCsrfToken();
+      if (!csrfToken) throw new Error("CSRF-Token could not be retrieved.");
+
+      const response = await axiosReq.post(
+        "/auth/login/",
+        {
+          username: data.username,
+          password: data.password,
+        },
+        {
+          headers: { "X-CSRFToken": csrfToken },
+        }
+      );
 
       console.log("✅ Login successful:", response.data);
       localStorage.setItem("accessToken", response.data.key);
-      
       window.dispatchEvent(new Event("storage"));
-
-      alert("Login successful!");
       navigate("/");
     } catch (error) {
       console.error("❌ Error:", error.response?.data || error.message);
-      
+
       if (error.response?.data?.non_field_errors?.includes("Email address is not verified.")) {
-        setErrorMessage("Your email address is not verified. Please check your inbox or request a new confirmation email.");
+        setErrorMessage(
+          <>
+            Your email address is not verified. Please check your inbox or&nbsp;
+            <a href="/resend-email">click here to resend the confirmation email</a>.
+          </>
+        );
       } else {
         setErrorMessage(
           error.response?.data?.detail || "Something went wrong. Please try again."
@@ -55,7 +76,9 @@ const Login = () => {
           <Card.Title className="text-center mb-4">
             Login to Lucky Cat
           </Card.Title>
+          {successMessage && <Alert variant="success">{successMessage}</Alert>}
           {errorMessage && <Alert variant="danger">{errorMessage}</Alert>}
+
           <Form onSubmit={handleSubmit(onSubmit)}>
             <Form.Group className="mb-3">
               <Form.Label>Username</Form.Label>

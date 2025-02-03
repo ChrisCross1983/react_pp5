@@ -26,22 +26,23 @@ const Login = () => {
         password: data.password,
       });
 
-      console.log("✅ Login erfolgreich:", response.data);
-      
-      // Token speichern
+      console.log("✅ Login successful:", response.data);
       localStorage.setItem("accessToken", response.data.key);
-
-      // Manuell ein "storage"-Event feuern, um Navbar zu aktualisieren
+      
       window.dispatchEvent(new Event("storage"));
 
       alert("Login successful!");
       navigate("/");
     } catch (error) {
-      console.error("❌ Fehler:", error.response?.data || error.message);
-      setErrorMessage(
-        error.response?.data?.detail ||
-          "Something went wrong. Please try again."
-      );
+      console.error("❌ Error:", error.response?.data || error.message);
+      
+      if (error.response?.data?.non_field_errors?.includes("Email address is not verified.")) {
+        setErrorMessage("Your email address is not verified. Please check your inbox or request a new confirmation email.");
+      } else {
+        setErrorMessage(
+          error.response?.data?.detail || "Something went wrong. Please try again."
+        );
+      }
     } finally {
       setIsSubmitting(false);
     }

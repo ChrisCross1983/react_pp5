@@ -16,37 +16,37 @@ const PostDetail = () => {
   const [editContent, setEditContent] = useState("");
 
   useEffect(() => {
-    const fetchPost = async () => {
-      try {
-        const response = await axiosReq.get(`/posts/${id}/`);
-        setPost(response.data);
-      } catch (err) {
-        setError("Failed to load the post. Please try again later.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    const fetchComments = async () => {
-      try {
-        const response = await axiosReq.get(`/posts/${id}/comments/`);
-        setComments(response.data);
-      } catch (err) {
-        console.error("Error loading comments:", err);
-      }
-    };
-
     fetchPost();
     fetchComments();
   }, [id]);
 
+  const fetchPost = async () => {
+    try {
+      const response = await axiosReq.get(`/posts/${id}/`);
+      setPost(response.data);
+    } catch (err) {
+      setError("Failed to load the post. Please try again later.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchComments = async () => {
+    try {
+      const response = await axiosReq.get(`/posts/${id}/comment/`);
+      setComments(response.data);
+    } catch (err) {
+      console.error("Error loading comments:", err);
+    }
+  };
+
   const handleLike = async () => {
     setIsLiking(true);
     try {
-      await axiosReq.post(`/posts/${id}/like/`);
+      const response = await axiosReq.post(`/posts/${id}/like/`);
       setPost((prevPost) => ({
         ...prevPost,
-        likes_count: prevPost.likes_count + 1,
+        likes_count: response.data.likes_count,
       }));
     } catch (err) {
       console.error("Failed to like the post", err);
@@ -74,7 +74,7 @@ const PostDetail = () => {
 
     try {
       await axiosReq.delete(`/posts/comments/${commentId}/`);
-      setComments(comments.filter((c) => c.id !== commentId));
+      setComments((prevComments) => prevComments.filter((c) => c.id !== commentId));
       alert("Comment deleted successfully.");
     } catch (err) {
       console.error("Error deleting comment:", err);
@@ -83,9 +83,7 @@ const PostDetail = () => {
 
   const handleEditPost = async () => {
     try {
-      const response = await axiosReq.put(`/posts/${id}/`, {
-        description: editContent,
-      });
+      const response = await axiosReq.put(`/posts/${id}/`, { description: editContent });
       setPost(response.data);
       setShowEditModal(false);
     } catch (err) {
@@ -98,10 +96,7 @@ const PostDetail = () => {
     if (!newComment.trim()) return;
 
     try {
-      const response = await axiosReq.post(`/posts/${id}/comments/`, {
-        content: newComment,
-      });
-
+      const response = await axiosReq.post(`/posts/${id}/comment/`, { content: newComment });
       setComments([...comments, response.data]);
       setNewComment("");
     } catch (err) {
@@ -120,31 +115,19 @@ const PostDetail = () => {
             <Card.Title>{post.title}</Card.Title>
             <Card.Text>{post.description}</Card.Text>
             <div className="d-flex align-items-center">
-              <Button
-                variant="outline-primary"
-                onClick={handleLike}
-                disabled={isLiking}
-              >
+              <Button variant="outline-primary" onClick={handleLike} disabled={isLiking}>
                 ❤️ Like {post.likes_count}
               </Button>
 
               {post.is_owner && (
                 <>
-                  <Button
-                    variant="outline-warning"
-                    className="ms-2"
-                    onClick={() => {
-                      setEditContent(post.description);
-                      setShowEditModal(true);
-                    }}
-                  >
+                  <Button variant="outline-warning" className="ms-2" onClick={() => {
+                    setEditContent(post.description);
+                    setShowEditModal(true);
+                  }}>
                     ✏️ Edit
                   </Button>
-                  <Button
-                    variant="outline-danger"
-                    className="ms-2"
-                    onClick={handleDeletePost}
-                  >
+                  <Button variant="outline-danger" className="ms-2" onClick={handleDeletePost}>
                     🗑 Delete
                   </Button>
                 </>
@@ -162,12 +145,8 @@ const PostDetail = () => {
                   <Card.Body>
                     <strong>{comment.author}</strong>: {comment.content}
                     {comment.is_owner && (
-                      <Button
-                        variant="outline-danger"
-                        size="sm"
-                        className="ms-2"
-                        onClick={() => handleDeleteComment(comment.id)}
-                      >
+                      <Button variant="outline-danger" size="sm" className="ms-2"
+                        onClick={() => handleDeleteComment(comment.id)}>
                         🗑 Delete
                       </Button>
                     )}
@@ -178,12 +157,8 @@ const PostDetail = () => {
 
             <Form onSubmit={handleCommentSubmit} className="mt-3">
               <Form.Group>
-                <Form.Control
-                  type="text"
-                  placeholder="Write a comment..."
-                  value={newComment}
-                  onChange={(e) => setNewComment(e.target.value)}
-                />
+                <Form.Control type="text" placeholder="Write a comment..."
+                  value={newComment} onChange={(e) => setNewComment(e.target.value)} />
               </Form.Group>
               <Button type="submit" className="mt-2" variant="primary">
                 Post Comment
@@ -202,12 +177,8 @@ const PostDetail = () => {
           <Form>
             <Form.Group>
               <Form.Label>Description</Form.Label>
-              <Form.Control
-                as="textarea"
-                rows={3}
-                value={editContent}
-                onChange={(e) => setEditContent(e.target.value)}
-              />
+              <Form.Control as="textarea" rows={3} value={editContent}
+                onChange={(e) => setEditContent(e.target.value)} />
             </Form.Group>
           </Form>
         </Modal.Body>

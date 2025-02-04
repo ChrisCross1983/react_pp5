@@ -8,12 +8,18 @@ const Posts = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // ✅ Dummy-Posts for testing
+  const dummyPosts = [
+    { id: 1, title: "Need a Cat-Sitter in Berlin", description: "Looking for a sitter for my 2 cats next weekend!" },
+    { id: 2, title: "Offering Cat-Sitting in Munich", description: "Happy to take care of your cat while you're away!" },
+  ];
+
   useEffect(() => {
     const fetchPosts = async () => {
       setLoading(true);
       try {
         const response = await axiosReq.get("/posts/feed/");
-        setPosts(response.data.results || []);
+        setPosts(response.data.results?.length ? response.data.results : dummyPosts);
       } catch (err) {
         setError("Failed to load posts. Please try again.");
       } finally {
@@ -41,7 +47,7 @@ const Posts = () => {
                 <Card.Body>
                   <Card.Title>{post.title}</Card.Title>
                   <Card.Text>{post.description}</Card.Text>
-                  <Button as={Link} to={`/posts/${post.id}`} variant="primary">
+                  <Button as={Link} to={`/posts/${post.id}/`} variant="primary">
                     View Details
                   </Button>
                 </Card.Body>

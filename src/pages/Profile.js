@@ -52,7 +52,7 @@ const Profile = () => {
         setPosts(response.data);
       } catch (err) {
         console.error("Error loading posts:", err);
-      }
+    }
     };
 
     const fetchSittingRequests = async () => {
@@ -148,7 +148,7 @@ const Profile = () => {
                 onClick={() => setShowEditModal(true)}
               >
                 ✏️ Edit Profile
-              </Button>
+                </Button>
             ) : (
               <Button
                 variant={isFollowing ? "outline-danger" : "outline-success"}

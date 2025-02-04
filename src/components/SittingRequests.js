@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Button, Card, Tabs, Tab } from "react-bootstrap";
-import "react-toastify/dist/ReactToastify.css";
 import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import { axiosReq } from "../api/axios";
 
 export default function SittingRequests() {
@@ -22,20 +22,14 @@ export default function SittingRequests() {
       setSentRequests(sentRes.data);
     } catch (error) {
       console.error("Error fetching requests", error);
-      toast.error("Failed to update request");
+      toast.error("Failed to update requests");
     }
     setLoading(false);
   };
 
-  const handleRequestAction = async (requestId, action, recipientId) => {
+  const handleRequestAction = async (requestId, action) => {
     try {
-      await axiosReq.post(`/api/posts/requests/manage/${requestId}/`, { action });
-
-      await axiosReq.post("/api/notifications/", {
-        recipient: recipientId,
-        message: `Your sitting request was ${action}ed.`,
-        type: "sitting_request",
-      });
+      await axiosReq.post(`/posts/requests/manage/${requestId}/`, { status: action });
 
       fetchRequests();
       toast.success(`Request ${action}ed successfully!`);
@@ -45,10 +39,25 @@ export default function SittingRequests() {
     }
   };
 
+  const createSittingRequest = async (postId) => {
+    try {
+      const response = await axiosReq.post(`/posts/${postId}/request/`, {
+        message: "I would like to request this sitting.",
+      });
+
+      toast.success("Sitting request sent successfully!");
+      fetchRequests();
+    } catch (error) {
+      console.error("Error creating sitting request:", error);
+      toast.error("Failed to create sitting request.");
+    }
+  };
+
   return (
     <div className="p-4">
       <h2 className="text-xl font-bold mb-4">Sitting Requests</h2>
       <Tabs defaultActiveKey="received" id="sitting-requests-tabs">
+        
         <Tab eventKey="received" title="Received Requests">
           {loading ? (
             <p>Loading...</p>
@@ -57,17 +66,17 @@ export default function SittingRequests() {
               <Card key={request.id} className="mb-4">
                 <Card.Body className="d-flex justify-content-between align-items-center">
                   <div>
-                    <p><strong>From:</strong> {request.sender.username}</p>
+                    <p><strong>From:</strong> {request.sender_username}</p>
                     <p><strong>Message:</strong> {request.message}</p>
                     <p><strong>Status:</strong> {request.status}</p>
                   </div>
                   {request.status === "pending" && (
                     <div className="space-x-2">
-                      <Button onClick={() => handleRequestAction(request.id, "accept")}>
-                        Accept
+                      <Button onClick={() => handleRequestAction(request.id, "accepted")}>
+                        ✅ Accept
                       </Button>
-                      <Button variant="danger" onClick={() => handleRequestAction(request.id, "decline")}>
-                        Decline
+                      <Button variant="danger" onClick={() => handleRequestAction(request.id, "declined")}>
+                        ❌ Decline
                       </Button>
                     </div>
                   )}
@@ -86,14 +95,9 @@ export default function SittingRequests() {
             sentRequests.map((request) => (
               <Card key={request.id} className="mb-4">
                 <Card.Body>
-                  <p><strong>To:</strong> {request.receiver.username}</p>
+                  <p><strong>To:</strong> {request.receiver_username}</p>
                   <p><strong>Message:</strong> {request.message}</p>
                   <p><strong>Status:</strong> {request.status}</p>
-                  {request.status === "pending" && (
-                    <Button variant="warning" onClick={() => handleRequestAction(request.id, "cancel")}>
-                      Cancel Request
-                    </Button>
-                  )}
                 </Card.Body>
               </Card>
             ))
@@ -102,6 +106,10 @@ export default function SittingRequests() {
           )}
         </Tab>
       </Tabs>
+
+      <Button variant="success" className="mt-3" onClick={() => createSittingRequest(1)}>
+        🐱 Request Sitting (Test Post ID = 1)
+      </Button>
     </div>
   );
 }

@@ -15,8 +15,8 @@ export default function TopFollowedUsers() {
   const fetchRequests = async () => {
     setLoading(true);
     try {
-      const receivedRes = await axiosReq.get("/posts/requests/incoming/");
-      const sentRes = await axiosReq.get("/posts/requests/sent/");
+      const receivedRes = await axiosReq.get("posts/requests/incoming/");
+      const sentRes = await axiosReq.get("posts/requests/sent/");
       setReceivedRequests(receivedRes.data);
       setSentRequests(sentRes.data);
     } catch (error) {
@@ -27,7 +27,7 @@ export default function TopFollowedUsers() {
 
   const handleRequestAction = async (requestId, action) => {
     try {
-      await axiosReq.post(`/posts/requests/manage/${requestId}/`, { action });
+      await axiosReq.post(`posts/requests/manage/${requestId}/`, { action });
       fetchRequests();
     } catch (error) {
       console.error("Error updating request", error);

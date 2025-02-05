@@ -16,8 +16,8 @@ export default function SittingRequests() {
   const fetchRequests = async () => {
     setLoading(true);
     try {
-      const receivedRes = await axiosReq.get("/posts/requests/incoming/");
-      const sentRes = await axiosReq.get("/posts/requests/sent/");
+      const receivedRes = await axiosReq.get("posts/requests/incoming/");
+      const sentRes = await axiosReq.get("posts/requests/sent/");
       setReceivedRequests(receivedRes.data);
       setSentRequests(sentRes.data);
     } catch (error) {
@@ -29,7 +29,7 @@ export default function SittingRequests() {
 
   const handleRequestAction = async (requestId, action) => {
     try {
-      await axiosReq.post(`/posts/requests/manage/${requestId}/`, { status: action });
+      await axiosReq.post(`posts/requests/manage/${requestId}/`, { status: action });
 
       fetchRequests();
       toast.success(`Request ${action}ed successfully!`);
@@ -41,7 +41,7 @@ export default function SittingRequests() {
 
   const createSittingRequest = async (postId) => {
     try {
-      const response = await axiosReq.post(`/posts/${postId}/request/`, {
+      const response = await axiosReq.post(`posts/${postId}/request/`, {
         message: "I would like to request this sitting.",
       });
 

@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
-import { axiosReq, getCsrfToken } from "../../api/axios";
+import { axiosReq } from "../../api/axios";
 import { Card, Button, Form, Alert } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 
@@ -24,23 +24,12 @@ const Register = () => {
     setSuccessMessage(null);
 
     try {
-      const csrfToken = await getCsrfToken();
-      if (!csrfToken) throw new Error("CSRF token could not be retrieved.");
-
-      const response = await axiosReq.post(
-        "/auth/registration/",
-        {
-          username: data.username,
-          email: data.email,
-          password1: data.password,
-          password2: data.confirmPassword,
-        },
-        {
-          headers: {
-            "X-CSRFToken": csrfToken,
-          },
-        }
-      );
+      const response = await axiosReq.post("auth/registration/", {
+        username: data.username,
+        email: data.email,
+        password1: data.password,
+        password2: data.confirmPassword,
+      });
 
       console.log("✅ Registration successful:", response.data);
       setSuccessMessage(
@@ -130,7 +119,7 @@ const Register = () => {
               {isSubmitting ? "Registering..." : "Register"}
             </Button>
           </Form>
-          
+
           <div className="text-center mt-3">
             <small>Already have an account? <a href="/login">Login here</a></small>
           </div>

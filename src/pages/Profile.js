@@ -34,7 +34,7 @@ const Profile = () => {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const response = await axiosReq.get(`/profiles/${id}/`);
+        const response = await axiosReq.get(`profiles/${id}/`);
         setProfile(response.data);
         setBio(response.data.bio);
         setIsFollowing(response.data.is_following);
@@ -48,7 +48,7 @@ const Profile = () => {
 
     const fetchPosts = async () => {
       try {
-        const response = await axiosReq.get(`/posts/?author=${id}`);
+        const response = await axiosReq.get(`posts/?author=${id}`);
         setPosts(response.data);
       } catch (err) {
         console.error("Error loading posts:", err);
@@ -57,8 +57,8 @@ const Profile = () => {
 
     const fetchSittingRequests = async () => {
       try {
-        const receivedRes = await axiosReq.get("/posts/requests/incoming/");
-        const sentRes = await axiosReq.get("/posts/requests/sent/");
+        const receivedRes = await axiosReq.get("posts/requests/incoming/");
+        const sentRes = await axiosReq.get("posts/requests/sent/");
         setReceivedRequests(receivedRes.data.length);
         setSentRequests(sentRes.data.length);
       } catch (err) {
@@ -73,7 +73,7 @@ const Profile = () => {
 
   const handleFollowToggle = async () => {
     try {
-      await axiosReq.post(`/profiles/${id}/follow/`);
+      await axiosReq.post(`profiles/${id}/follow/`);
       setIsFollowing(!isFollowing);
       setFollowersCount((prev) => (isFollowing ? prev - 1 : prev + 1));
     } catch (err) {
@@ -83,7 +83,7 @@ const Profile = () => {
 
   const handleEditProfile = async () => {
     try {
-      const response = await axiosReq.put(`/profiles/edit/`, {
+      const response = await axiosReq.put(`profiles/edit/`, {
         bio: bio,
       });
       setProfile(response.data);
@@ -95,7 +95,7 @@ const Profile = () => {
 
   const fetchFollowers = async () => {
     try {
-      const response = await axiosReq.get(`/profiles/${id}/followers/`);
+      const response = await axiosReq.get(`profiles/${id}/followers/`);
       setFollowers(response.data);
       setShowFollowersModal(true);
     } catch (err) {
@@ -105,7 +105,7 @@ const Profile = () => {
 
   const fetchFollowing = async () => {
     try {
-      const response = await axiosReq.get(`/profiles/${id}/following/`);
+      const response = await axiosReq.get(`profiles/${id}/following/`);
       setFollowing(response.data);
       setShowFollowingModal(true);
     } catch (err) {

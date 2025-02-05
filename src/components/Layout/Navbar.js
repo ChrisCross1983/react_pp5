@@ -1,70 +1,74 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useContext, useCallback, useState } from "react";
 import { Navbar, Nav, Button, Container, Badge } from "react-bootstrap";
 import { Link, useNavigate } from "react-router-dom";
-import { axiosReq, getCsrfToken } from "../../api/axios";
+import { axiosReq } from "../../api/axios";
+import { AuthContext } from "../../context/AuthContext";
 
 const Navigation = () => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const { isAuthenticated, setIsAuthenticated, userId, setUserId, username, setUsername } = useContext(AuthContext);
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
-  const [userId, setUserId] = useState(null);
   const navigate = useNavigate();
 
   const fetchNotifications = useCallback(async () => {
     try {
-      const response = await axiosReq.get("/api/notifications/");
+      const response = await axiosReq.get("notifications/");
       setNotifications(response.data);
       setUnreadCount(response.data.filter((n) => !n.is_read).length);
     } catch (error) {
-      console.error("Error fetching notifications:", error);
+      console.error("❌ Error fetching notifications:", error);
     }
   }, []);
 
   useEffect(() => {
+    console.log("🔄 Checking authentication status...");
+
     const token = localStorage.getItem("accessToken");
     setIsAuthenticated(!!token);
 
     if (token) {
-      fetchNotifications();
-
-      axiosReq
-        .get("/api/auth/user/", {
-          headers: { Authorization: `Bearer ${token}` },
+      console.log("✅ User is authenticated, fetching user data...");
+      
+      axiosReq.get("auth/user/")
+        .then(response => {
+          console.log("✅ User Data Loaded:", response.data);
+          setUserId(response.data.pk);
+          setUsername(response.data.username);
+          fetchNotifications();
         })
-        .then((response) => {
-          setUserId(response.data.id);
-          localStorage.setItem("userId", response.data.id);
-        })
-        .catch((error) => console.error("Error fetching user info:", error));
+        .catch(error => {
+          console.error("❌ Error fetching user info:", error.response?.data || error.message);
+          setUserId(null);
+          setUsername("");
+        });
+    } else {
+      console.log("❌ No access token found, user is not authenticated.");
+      setUserId(null);
+      setUsername("");
     }
-
-    const handleStorageChange = () => {
-      setIsAuthenticated(!!localStorage.getItem("accessToken"));
-      setUserId(localStorage.getItem("userId"));
-    };
-
-    window.addEventListener("storage", handleStorageChange);
-    return () => window.removeEventListener("storage", handleStorageChange);
-  }, [fetchNotifications]);
+  }, [isAuthenticated, fetchNotifications]);
 
   const handleLogout = async () => {
     try {
-      const csrfToken = await getCsrfToken();
-      await axiosReq.post("/auth/logout/", null, {
-        headers: { "X-CSRFToken": csrfToken },
-      });
+      const refreshToken = localStorage.getItem("refreshToken");
+      if (!refreshToken) throw new Error("No refresh token found.");
+
+      await axiosReq.post("auth/logout/", { refresh: refreshToken });
 
       localStorage.removeItem("accessToken");
       localStorage.removeItem("refreshToken");
-      localStorage.removeItem("userId");
 
       setIsAuthenticated(false);
       setUserId(null);
+      setUsername("");
+
       navigate("/login");
     } catch (error) {
-      console.error("Logout failed:", error.response?.data || error.message);
+      console.error("❌ Logout failed:", error.response?.data || error.message);
     }
   };
+
+  console.log("🔍 Authenticated:", isAuthenticated, "| User ID:", userId);
 
   return (
     <Navbar bg="dark" variant="dark" expand="lg">
@@ -78,13 +82,18 @@ const Navigation = () => {
                 <Nav.Link as={Link} to="/dashboard">Dashboard</Nav.Link>
                 <Nav.Link as={Link} to="/sitting-requests">Sitting Requests</Nav.Link>
                 <Nav.Link as={Link} to="/notifications">
-                  🔔 Notifications {unreadCount > 0 && <Badge bg="danger">{unreadCount}</Badge>}
+                  🔔 Notifications{" "}
+                  {unreadCount > 0 && <Badge bg="danger">{unreadCount}</Badge>}
                 </Nav.Link>
                 {userId && (
                   <Nav.Link as={Link} to={`/profile/${userId}`}>Profile</Nav.Link>
                 )}
-                <span className="navbar-text mx-2 text-light">Logged in as {userId}</span>
-                <Button variant="outline-light" onClick={handleLogout}>Logout</Button>
+                <span className="navbar-text mx-2 text-light">
+                  Logged in as {username || "Unknown"}
+                </span>
+                <Button variant="outline-light" onClick={handleLogout}>
+                  Logout
+                </Button>
               </>
             ) : (
               <>

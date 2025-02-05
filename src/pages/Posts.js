@@ -18,7 +18,7 @@ const Posts = () => {
     const fetchPosts = async () => {
       setLoading(true);
       try {
-        const response = await axiosReq.get("/posts/feed/");
+        const response = await axiosReq.get("posts/feed/");
         setPosts(response.data.results?.length ? response.data.results : dummyPosts);
       } catch (err) {
         setError("Failed to load posts. Please try again.");

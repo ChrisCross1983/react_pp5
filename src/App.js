@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useContext } from "react";
 import { BrowserRouter as Router, Route, Routes, Navigate } from "react-router-dom";
 import Register from "./components/Auth/Register";
 import Login from "./components/Auth/Login";
@@ -10,29 +10,36 @@ import Home from "./pages/Home";
 import Posts from "./pages/Posts";
 import PostDetail from "./pages/PostDetail";
 import Profile from "./pages/Profile";
-import './App.css';
+import { AuthProvider, AuthContext } from "./context/AuthContext";
+import "./App.css";
 
-const isAuthenticated = !!localStorage.getItem("accessToken");
+const AppRoutes = () => {
+  const { isAuthenticated } = useContext(AuthContext);
 
-console.log("🚀 Posts importiert:", Posts);
+  return (
+    <Routes>
+      <Route path="/" element={<Home />} />
+      <Route path="/register" element={isAuthenticated ? <Navigate to="/" /> : <Register />} />
+      <Route path="/login" element={isAuthenticated ? <Navigate to="/" /> : <Login />} />
+      <Route path="/resend-email" element={<ResendEmail />} />
+      <Route path="/posts" element={<Posts />} />
+      <Route path="/posts/:id" element={<PostDetail />} />
+      <Route path="/profile/:id" element={<Profile />} />
+      <Route path="/notifications" element={<Notifications />} />
+      <Route path="/sitting-requests" element={<SittingRequests />} />
+      <Route path="*" element={<Navigate to="/" />} />
+    </Routes>
+  );
+};
 
 const App = () => {
   return (
-    <Router>
-      <Navigation /> {/* Navbar integration */}
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/register" element={isAuthenticated ? <Navigate to="/" /> : <Register />} />
-        <Route path="/login" element={isAuthenticated ? <Navigate to="/" /> : <Login />} />
-        <Route path="/resend-email" element={<ResendEmail />} />
-        <Route path="/posts" element={<Posts />} />
-        <Route path="/posts/:id" element={<PostDetail />} />
-        <Route path="/profile/:id" element={<Profile />} />
-        <Route path="/notifications" element={<Notifications />} />
-        <Route path="/sitting-requests" element={<SittingRequests />} />
-        <Route path="*" element={<Navigate to="/" />} />
-      </Routes>
-    </Router>
+    <AuthProvider>
+      <Router>
+        <Navigation /> {/* ✅ Navbar */}
+        <AppRoutes />
+      </Router>
+    </AuthProvider>
   );
 };
 

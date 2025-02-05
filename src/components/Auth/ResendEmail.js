@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { axiosReq, getCsrfToken } from "../../api/axios";
+import { axiosReq } from "../../api/axios";
 import { Card, Button, Form, Alert } from "react-bootstrap";
 
 const ResendEmail = () => {
@@ -15,14 +15,7 @@ const ResendEmail = () => {
     setErrorMessage(null);
 
     try {
-      const csrfToken = await getCsrfToken();
-      if (!csrfToken) throw new Error("CSRF-Token cannot be retrieved.");
-
-      await axiosReq.post(
-        "/auth/registration/resend-email/",
-        { email },
-        { headers: { "X-CSRFToken": csrfToken } }
-      );
+      await axiosReq.post("registration/resend-email/", { email });
 
       setMessage("A new verification email has been sent to your email address. Please check your inbox.");
     } catch (error) {

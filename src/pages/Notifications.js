@@ -13,7 +13,7 @@ const Notifications = () => {
 
   const fetchNotifications = async () => {
     try {
-      const response = await axiosReq.get("/api/notifications/");
+      const response = await axiosReq.get("notifications/");
       setNotifications(response.data);
     } catch (err) {
       setError("Error loading notifications.");
@@ -24,7 +24,7 @@ const Notifications = () => {
 
   const markAsRead = async (id) => {
     try {
-      await axiosReq.post(`/api/notifications/${id}/mark-read/`);
+      await axiosReq.post(`notifications/${id}/mark-read/`);
       setNotifications((prev) => prev.map((n) => 
         n.id === id ? { ...n, is_read: true } : n
       ));
@@ -35,7 +35,7 @@ const Notifications = () => {
 
   const markAllAsRead = async () => {
     try {
-      await axiosReq.post("/api/notifications/mark-all-read/");
+      await axiosReq.post("notifications/mark-all-read/");
       setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
     } catch (err) {
       console.error("Error marking notifications as read:", err);

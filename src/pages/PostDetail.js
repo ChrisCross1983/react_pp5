@@ -4,7 +4,7 @@ import { Card, Button, Spinner, Alert, Form, Modal } from "react-bootstrap";
 import { axiosReq } from "../api/axios";
 
 const PostDetail = () => {
-  const { id } = useParams();
+  const { id: postId } = useParams();
   const navigate = useNavigate();
   const [post, setPost] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -16,13 +16,16 @@ const PostDetail = () => {
   const [editContent, setEditContent] = useState("");
 
   useEffect(() => {
-    fetchPost();
-    fetchComments();
-  }, [id]);
+    const fetchData = async () => {
+      await fetchPost();
+      await fetchComments();
+    };
+    fetchData();
+  }, [postId]);
 
   const fetchPost = async () => {
     try {
-      const response = await axiosReq.get(`posts/${id}/`);
+      const response = await axiosReq.get(`posts/${postId}/`);
       setPost(response.data);
     } catch (err) {
       setError("Failed to load the post. Please try again later.");
@@ -33,18 +36,18 @@ const PostDetail = () => {
 
   const fetchComments = async () => {
     try {
-      const response = await axiosReq.get(`posts/${id}/comment/`);
+      const response = await axiosReq.get(`posts/${postId}/comment/`);
       setComments(response.data);
     } catch (err) {
-      console.error("Error loading comments:", err);
+      console.error("❌ Error loading comments:", err.response?.data || err.message);
     }
-  };
+};
 
   const handleLike = async () => {
     setIsLiking(true);
     try {
       await axiosReq.post(
-        `posts/${id}/like/`,
+        `posts/${postId}/like/`,
         {},
         { headers: { "X-CSRFToken": localStorage.getItem("csrfToken") } }
       );
@@ -66,7 +69,7 @@ const PostDetail = () => {
     if (!confirmDelete) return;
 
     try {
-      await axiosReq.delete(`posts/${id}/`, {
+      await axiosReq.delete(`posts/${postId}/`, {
         headers: { "X-CSRFToken": localStorage.getItem("csrfToken") },
       });
       alert("Post deleted successfully.");
@@ -79,7 +82,7 @@ const PostDetail = () => {
   const handleEditPost = async () => {
     try {
       const response = await axiosReq.put(
-        `posts/${id}/`,
+        `posts/${postId}/`,
         { description: editContent },
         { headers: { "X-CSRFToken": localStorage.getItem("csrfToken") } }
       );
@@ -96,7 +99,7 @@ const PostDetail = () => {
 
     try {
       const response = await axiosReq.post(
-        `posts/${id}/comments/`,
+        `posts/${postId}/comment/`,
         { content: newComment },
         { headers: { "X-CSRFToken": localStorage.getItem("csrfToken") } }
       );
@@ -104,9 +107,9 @@ const PostDetail = () => {
       setComments([...comments, response.data]);
       setNewComment("");
     } catch (err) {
-      console.error("Error posting comment:", err);
+      console.error("❌ Error posting comment:", err.response?.data || err.message);
     }
-  };
+};
 
   const handleDeleteComment = async (commentId) => {
     const confirmDelete = window.confirm(
@@ -115,7 +118,7 @@ const PostDetail = () => {
     if (!confirmDelete) return;
 
     try {
-      await axiosReq.delete(`posts/comments/${commentId}/`);
+      await axiosReq.delete(`posts/comment/${commentId}/`);
       setComments((prevComments) =>
         prevComments.filter((c) => c.id !== commentId)
       );

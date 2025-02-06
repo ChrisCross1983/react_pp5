@@ -1,6 +1,6 @@
 import React, { useEffect, useContext, useCallback, useState } from "react";
 import { Navbar, Nav, Button, Container, Badge } from "react-bootstrap";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { axiosReq } from "../../api/axios";
 import { AuthContext } from "../../context/AuthContext";
 
@@ -8,6 +8,7 @@ const Navigation = () => {
   const { isAuthenticated, userId, username, logout } = useContext(AuthContext);
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
+  const navigate = useNavigate();
 
   const fetchNotifications = useCallback(async () => {
     try {
@@ -26,7 +27,12 @@ const Navigation = () => {
       setNotifications([]);
       setUnreadCount(0);
     }
-  }, []);  
+  }, []);
+
+  const handleLogout = async () => {
+    await logout();
+    navigate("/login");
+  };
 
   useEffect(() => {
     console.log("🔄 Checking authentication status...");
@@ -68,7 +74,7 @@ const Navigation = () => {
                 <span className="navbar-text mx-2 text-light">
                   Logged in as {username || "Unknown"}
                 </span>
-                <Button variant="outline-light" onClick={logout}>
+                <Button variant="outline-light" onClick={handleLogout}>
                   Logout
                 </Button>
               </>

@@ -11,14 +11,19 @@ const PostDetail = () => {
   const [error, setError] = useState(null);
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState("");
+  const [editCommentId, setEditCommentId] = useState(null);
+  const [editCommentContent, setEditCommentContent] = useState("");
   const [isLiking, setIsLiking] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showCommentEditModal, setShowCommentEditModal] = useState(false);
   const [editContent, setEditContent] = useState("");
 
   useEffect(() => {
     const fetchData = async () => {
+      setLoading(true);
       await fetchPost();
       await fetchComments();
+      setLoading(false);
     };
     fetchData();
   }, [postId]);
@@ -26,47 +31,68 @@ const PostDetail = () => {
   const fetchPost = async () => {
     try {
       const response = await axiosReq.get(`posts/${postId}/`);
-      setPost(response.data);
+      setPost({
+        ...response.data,
+        is_owner: response.data.is_owner ?? false,
+      });
     } catch (err) {
       setError("Failed to load the post. Please try again later.");
-    } finally {
-      setLoading(false);
     }
   };
 
   const fetchComments = async () => {
     try {
       const response = await axiosReq.get(`posts/${postId}/comment/`);
-      setComments(response.data);
+      const updatedComments = response.data.map((comment) => ({
+        ...comment,
+        is_owner: comment.is_owner ?? false,
+      }));
+      setComments(updatedComments);
     } catch (err) {
-      console.error("❌ Error loading comments:", err.response?.data || err.message);
+      console.error(
+        "❌ Error loading comments:",
+        err.response?.data || err.message
+      );
     }
-};
+  };
 
   const handleLike = async () => {
-    setIsLiking(true);
-    try {
-      await axiosReq.post(
-        `posts/${postId}/like/`,
-        {},
-        { headers: { "X-CSRFToken": localStorage.getItem("csrfToken") } }
-      );
-      setPost((prevPost) => ({
-        ...prevPost,
-        likes_count: prevPost.likes_count + 1,
-      }));
-    } catch (err) {
-      console.error("Failed to like the post", err);
-    } finally {
-      setIsLiking(false);
+    if (post?.has_liked) {
+      try {
+        await axiosReq.delete(`posts/${postId}/like/`, {
+          headers: { "X-CSRFToken": localStorage.getItem("csrfToken") },
+        });
+  
+        setPost((prevPost) => ({
+          ...prevPost,
+          has_liked: false,
+          likes_count: prevPost.likes_count - 1,
+        }));
+      } catch (err) {
+        console.error("❌ Error unliking post:", err);
+      }
+    } else {
+
+      try {
+        await axiosReq.post(
+          `posts/${postId}/like/`,
+          {},
+          { headers: { "X-CSRFToken": localStorage.getItem("csrfToken") } }
+        );
+  
+        setPost((prevPost) => ({
+          ...prevPost,
+          has_liked: true,
+          likes_count: prevPost.likes_count + 1,
+        }));
+      } catch (err) {
+        console.error("❌ Error liking post:", err);
+      }
     }
   };
 
   const handleDeletePost = async () => {
-    const confirmDelete = window.confirm(
-      "Are you sure you want to delete this post?"
-    );
-    if (!confirmDelete) return;
+    if (!window.confirm("Are you sure you want to delete this post?")) return;
 
     try {
       await axiosReq.delete(`posts/${postId}/`, {
@@ -100,25 +126,54 @@ const PostDetail = () => {
     try {
       const response = await axiosReq.post(
         `posts/${postId}/comment/`,
-        { content: newComment },
+        { content: newComment, post: postId },
         { headers: { "X-CSRFToken": localStorage.getItem("csrfToken") } }
       );
 
-      setComments([...comments, response.data]);
+      setComments([response.data, ...comments]);
       setNewComment("");
     } catch (err) {
-      console.error("❌ Error posting comment:", err.response?.data || err.message);
+      console.error(
+        "❌ Error posting comment:",
+        err.response?.data || err.message
+      );
     }
-};
+  };
+
+  const handleEditComment = (comment) => {
+    setEditCommentId(comment.id);
+    setEditCommentContent(comment.content);
+    setShowCommentEditModal(true);
+  };
+
+  const handleSaveEditComment = async () => {
+    try {
+      const response = await axiosReq.put(
+        `posts/comments/${editCommentId}/`,
+        { content: editCommentContent, post: postId },
+        { headers: { "X-CSRFToken": localStorage.getItem("csrfToken") } }
+      );
+
+      setComments((prevComments) =>
+        prevComments.map((c) =>
+          c.id === editCommentId ? { ...c, content: response.data.content } : c
+        )
+      );
+      setShowCommentEditModal(false);
+    } catch (err) {
+      console.error(
+        "❌ Error updating comment:",
+        err.response?.data || err.message
+      );
+    }
+  };
 
   const handleDeleteComment = async (commentId) => {
-    const confirmDelete = window.confirm(
-      "Are you sure you want to delete this comment?"
-    );
-    if (!confirmDelete) return;
+    if (!window.confirm("Are you sure you want to delete this comment?"))
+      return;
 
     try {
-      await axiosReq.delete(`posts/comment/${commentId}/`);
+      await axiosReq.delete(`posts/comments/${commentId}/`);
       setComments((prevComments) =>
         prevComments.filter((c) => c.id !== commentId)
       );
@@ -147,7 +202,7 @@ const PostDetail = () => {
                 ❤️ Like {post.likes_count}
               </Button>
 
-              {post.is_owner && (
+              {post?.is_owner && (
                 <>
                   <Button
                     variant="outline-warning"
@@ -173,28 +228,8 @@ const PostDetail = () => {
             <hr />
 
             <h5>Comments</h5>
-            {comments.length === 0 ? (
-              <p>No comments yet. Be the first to comment!</p>
-            ) : (
-              comments.map((comment) => (
-                <Card key={comment.id} className="mb-2">
-                  <Card.Body>
-                    <strong>{comment.author}</strong>: {comment.content}
-                    {comment.is_owner && (
-                      <Button
-                        variant="outline-danger"
-                        size="sm"
-                        className="ms-2"
-                        onClick={() => handleDeleteComment(comment.id)}
-                      >
-                        🗑 Delete
-                      </Button>
-                    )}
-                  </Card.Body>
-                </Card>
-              ))
-            )}
 
+            {/* Comment textfield */}
             <Form onSubmit={handleCommentSubmit} className="mt-3">
               <Form.Group>
                 <Form.Control
@@ -208,6 +243,39 @@ const PostDetail = () => {
                 Post Comment
               </Button>
             </Form>
+
+            {/* Comment View */}
+            {comments.length === 0 ? (
+              <p className="mt-3">No comments yet. Be the first to comment!</p>
+            ) : (
+              comments.map((comment) => (
+                <Card key={comment.id} className="mb-2">
+                  <Card.Body>
+                    <strong>{comment.author}</strong>: {comment.content}
+                    {comment.is_owner && (
+                      <>
+                        <Button
+                          variant="outline-warning"
+                          size="sm"
+                          className="ms-2"
+                          onClick={() => handleEditComment(comment)}
+                        >
+                          ✏️ Edit
+                        </Button>
+                        <Button
+                          variant="outline-danger"
+                          size="sm"
+                          className="ms-2"
+                          onClick={() => handleDeleteComment(comment.id)}
+                        >
+                          🗑 Delete
+                        </Button>
+                      </>
+                    )}
+                  </Card.Body>
+                </Card>
+              ))
+            )}
           </Card.Body>
         </Card>
       )}
@@ -239,8 +307,38 @@ const PostDetail = () => {
           </Button>
         </Modal.Footer>
       </Modal>
+
+      {/* Edit Comment Modal */}
+      <Modal
+        show={showCommentEditModal}
+        onHide={() => setShowCommentEditModal(false)}
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>Edit Comment</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Form.Control
+            as="textarea"
+            rows={3}
+            value={editCommentContent}
+            onChange={(e) => setEditCommentContent(e.target.value)}
+          />
+        </Modal.Body>
+        <Modal.Footer>
+          <Button
+            variant="secondary"
+            onClick={() => setShowCommentEditModal(false)}
+          >
+            Cancel
+          </Button>
+          <Button variant="primary" onClick={handleSaveEditComment}>
+            Save Changes
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </div>
   );
 };
 
 export default PostDetail;
+

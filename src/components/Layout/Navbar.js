@@ -1,72 +1,49 @@
 import React, { useEffect, useContext, useCallback, useState } from "react";
 import { Navbar, Nav, Button, Container, Badge } from "react-bootstrap";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { axiosReq } from "../../api/axios";
 import { AuthContext } from "../../context/AuthContext";
 
 const Navigation = () => {
-  const { isAuthenticated, setIsAuthenticated, userId, setUserId, username, setUsername } = useContext(AuthContext);
+  const { isAuthenticated, userId, username, logout } = useContext(AuthContext);
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
-  const navigate = useNavigate();
 
   const fetchNotifications = useCallback(async () => {
     try {
       const response = await axiosReq.get("notifications/");
-      setNotifications(response.data);
-      setUnreadCount(response.data.filter((n) => !n.is_read).length);
+      
+      if (response.data && Array.isArray(response.data.results)) {
+        setNotifications(response.data.results);
+        setUnreadCount(response.data.results.filter((n) => n && !n.is_read).length);
+      } else {
+        console.error("⚠️ Unexpected response format for notifications:", response.data);
+        setNotifications([]);
+        setUnreadCount(0);
+      }
     } catch (error) {
-      console.error("❌ Error fetching notifications:", error);
+      console.error("❌ Error fetching notifications:", error.response?.data || error.message);
+      setNotifications([]);
+      setUnreadCount(0);
     }
-  }, []);
+  }, []);  
 
   useEffect(() => {
     console.log("🔄 Checking authentication status...");
 
-    const token = localStorage.getItem("accessToken");
-    setIsAuthenticated(!!token);
-
-    if (token) {
+    if (isAuthenticated) {
       console.log("✅ User is authenticated, fetching user data...");
-      
-      axiosReq.get("auth/user/")
+
+      axiosReq.get("profiles/auth/user/")
         .then(response => {
           console.log("✅ User Data Loaded:", response.data);
-          setUserId(response.data.pk);
-          setUsername(response.data.username);
           fetchNotifications();
         })
         .catch(error => {
           console.error("❌ Error fetching user info:", error.response?.data || error.message);
-          setUserId(null);
-          setUsername("");
         });
-    } else {
-      console.log("❌ No access token found, user is not authenticated.");
-      setUserId(null);
-      setUsername("");
     }
   }, [isAuthenticated, fetchNotifications]);
-
-  const handleLogout = async () => {
-    try {
-      const refreshToken = localStorage.getItem("refreshToken");
-      if (!refreshToken) throw new Error("No refresh token found.");
-
-      await axiosReq.post("auth/logout/", { refresh: refreshToken });
-
-      localStorage.removeItem("accessToken");
-      localStorage.removeItem("refreshToken");
-
-      setIsAuthenticated(false);
-      setUserId(null);
-      setUsername("");
-
-      navigate("/login");
-    } catch (error) {
-      console.error("❌ Logout failed:", error.response?.data || error.message);
-    }
-  };
 
   console.log("🔍 Authenticated:", isAuthenticated, "| User ID:", userId);
 
@@ -91,7 +68,7 @@ const Navigation = () => {
                 <span className="navbar-text mx-2 text-light">
                   Logged in as {username || "Unknown"}
                 </span>
-                <Button variant="outline-light" onClick={handleLogout}>
+                <Button variant="outline-light" onClick={logout}>
                   Logout
                 </Button>
               </>

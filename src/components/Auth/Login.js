@@ -6,7 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../../context/AuthContext";
 
 const Login = () => {
-  const { setIsAuthenticated, setUserId, setUsername } = useContext(AuthContext);
+  const { login } = useContext(AuthContext);
   const [errorMessage, setErrorMessage] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -33,18 +33,7 @@ const Login = () => {
       console.log("✅ Login Response:", response.data);
 
       if (response.data.access && response.data.refresh) {
-        localStorage.setItem("accessToken", response.data.access);
-        localStorage.setItem("refreshToken", response.data.refresh);
-        axiosReq.defaults.headers.common["Authorization"] = `Bearer ${response.data.access}`;
-
-        setIsAuthenticated(true);
-
-        axiosReq.get("auth/user/")
-          .then(response => {
-            setUserId(response.data.pk);
-            setUsername(response.data.username);
-          })
-          .catch(error => console.error("❌ Error fetching user info:", error.response?.data || error.message));
+        login(response.data.access, response.data.refresh);
 
         navigate("/dashboard");
       } else {

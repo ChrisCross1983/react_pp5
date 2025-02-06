@@ -14,22 +14,29 @@ const Notifications = () => {
   const fetchNotifications = async () => {
     try {
       const response = await axiosReq.get("notifications/");
-      setNotifications(response.data);
+
+      if (response.data && Array.isArray(response.data.results)) {
+        setNotifications(response.data.results);
+      } else {
+        console.error("⚠️ Unexpected response format:", response.data);
+        setNotifications([]);
+      }
     } catch (err) {
-      setError("Error loading notifications.");
+      console.error("❌ Error loading notifications:", err.response?.data || err.message);
+      setNotifications([]);
     } finally {
       setLoading(false);
     }
-  };
+  };  
 
   const markAsRead = async (id) => {
     try {
       await axiosReq.post(`notifications/${id}/mark-read/`);
-      setNotifications((prev) => prev.map((n) => 
-        n.id === id ? { ...n, is_read: true } : n
-      ));
+      setNotifications((prev) =>
+        prev.map((n) => (n.id === id ? { ...n, is_read: true } : n))
+      );
     } catch (error) {
-      console.error("Error marking notification as read:", error);
+      console.error("❌ Error marking notification as read:", error.response?.data || error.message);
     }
   };
 
@@ -38,7 +45,7 @@ const Notifications = () => {
       await axiosReq.post("notifications/mark-all-read/");
       setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
     } catch (err) {
-      console.error("Error marking notifications as read:", err);
+      console.error("❌ Error marking all notifications as read:", err.response?.data || err.message);
     }
   };
 
@@ -57,23 +64,29 @@ const Notifications = () => {
         {notifications.length === 0 ? (
           <Alert variant="info">No notifications yet.</Alert>
         ) : (
-          notifications.map((notification) => (
-            <ListGroup.Item 
-              key={notification.id} 
-              className={`d-flex justify-content-between ${notification.is_read ? "text-muted" : ""}`}
-            >
-              {notification.message}
-              {!notification.is_read && (
-                <Button 
-                  variant="outline-secondary" 
-                  size="sm" 
-                  onClick={() => markAsRead(notification.id)}
-                >
-                  Mark as Read
-                </Button>
-              )}
-            </ListGroup.Item>
-          ))
+          notifications.map((notification) =>
+            notification && typeof notification === "object" ? (
+              <ListGroup.Item
+                key={notification.id}
+                className={`d-flex justify-content-between ${notification.is_read ? "text-muted" : ""}`}
+              >
+                {notification.message}
+                {!notification.is_read && (
+                  <Button
+                    variant="outline-secondary"
+                    size="sm"
+                    onClick={() => markAsRead(notification.id)}
+                  >
+                    Mark as Read
+                  </Button>
+                )}
+              </ListGroup.Item>
+            ) : (
+              <Alert variant="warning" key={`error-${Math.random()}`}>
+                ⚠️ Invalid notification format
+              </Alert>
+            )
+          )
         )}
       </ListGroup>
     </Container>

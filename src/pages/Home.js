@@ -28,7 +28,7 @@ const Home = () => {
                 Go to Profile
               </Button>
               <Button as={Link} to="/create-post" variant="primary">
-                Create a Sitting Request
+                Create Post
               </Button>
             </Col>
           </Row>

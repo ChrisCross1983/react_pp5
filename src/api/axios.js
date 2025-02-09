@@ -1,7 +1,9 @@
 import axios from "axios";
 
+const baseURL = process.env.REACT_APP_API_BASE_URL || "http://localhost:8000/api/";
+
 export const axiosReq = axios.create({
-  baseURL: "https://luckycat-b653875cceaf.herokuapp.com/api/",
+  baseURL: baseURL,
   withCredentials: true,
   headers: {
     "Content-Type": "application/json",
@@ -34,7 +36,7 @@ axiosReq.interceptors.response.use(
 
       try {
         const res = await axios.post(
-          "https://luckycat-b653875cceaf.herokuapp.com/api/auth/token/refresh/",
+          `${baseURL}auth/token/refresh/`,
           { refresh: refreshToken }
         );
 
@@ -42,8 +44,10 @@ axiosReq.interceptors.response.use(
         localStorage.setItem("accessToken", res.data.access);
         localStorage.setItem("refreshToken", res.data.refresh);
 
+        axiosReq.defaults.headers.common["Authorization"] = `Bearer ${res.data.access}`;
         error.config.headers.Authorization = `Bearer ${res.data.access}`;
-        return axios(error.config);
+
+        return axiosReq(error.config);
       } catch (err) {
         console.error("❌ Token refresh failed:", err.response?.data || err.message);
         localStorage.removeItem("accessToken");

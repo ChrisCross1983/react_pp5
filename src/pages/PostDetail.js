@@ -25,6 +25,7 @@ const PostDetail = () => {
       await fetchComments();
       setLoading(false);
     };
+  
     fetchData();
   }, [postId]);
 
@@ -42,7 +43,7 @@ const PostDetail = () => {
 
   const fetchComments = async () => {
     try {
-      const response = await axiosReq.get(`posts/${postId}/comment/`);
+      const response = await axiosReq.get(`posts/${postId}/comments/`);
       const updatedComments = response.data.map((comment) => ({
         ...comment,
         is_owner: comment.is_owner ?? false,
@@ -72,7 +73,6 @@ const PostDetail = () => {
         console.error("❌ Error unliking post:", err);
       }
     } else {
-
       try {
         await axiosReq.post(
           `posts/${postId}/like/`,
@@ -89,6 +89,7 @@ const PostDetail = () => {
         console.error("❌ Error liking post:", err);
       }
     }
+    setIsLiking(false);
   };
 
   const handleDeletePost = async () => {
@@ -125,7 +126,7 @@ const PostDetail = () => {
 
     try {
       const response = await axiosReq.post(
-        `posts/${postId}/comment/`,
+        `posts/${postId}/comments/`,
         { content: newComment, post: postId },
         { headers: { "X-CSRFToken": localStorage.getItem("csrfToken") } }
       );
@@ -336,9 +337,8 @@ const PostDetail = () => {
           </Button>
         </Modal.Footer>
       </Modal>
-    </div>
-  );
-};
+      </div>
+    );
+  };
 
 export default PostDetail;
-

@@ -5,7 +5,7 @@ import { axiosReq } from "../api/axios";
 const Notifications = () => {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const error = useState(null);
 
   useEffect(() => {
     fetchNotifications();

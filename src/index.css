@@ -13,3 +13,24 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
+/* Highlight comments from own users visually */
+.border-warning {
+  border-left: 4px solid #ff9800 !important;  
+  background-color: rgba(255, 152, 0, 0.1);
+}
+
+/* Standard-Comments */
+.border-light {
+  border-left: 4px solid #f8f9fa !important;  
+  background-color: rgba(248, 249, 250, 0.5);
+}
+
+/* Profile Picture Styling */
+.comment-avatar {
+  border: 2px solid #ddd;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  object-fit: cover;
+}

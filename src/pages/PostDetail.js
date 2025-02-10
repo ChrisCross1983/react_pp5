@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Card, Button, Spinner, Alert, Form, Modal } from "react-bootstrap";
 import { axiosReq } from "../api/axios";
+import { formatDistanceToNow } from "date-fns";
 
 const PostDetail = () => {
   const { id: postId } = useParams();
@@ -250,9 +251,24 @@ const PostDetail = () => {
               <p className="mt-3">No comments yet. Be the first to comment!</p>
             ) : (
               comments.map((comment) => (
-                <Card key={comment.id} className="mb-2">
-                  <Card.Body>
-                    <strong>{comment.author}</strong>: {comment.content}
+                <Card key={comment.id} className={`mb-2 p-2 shadow-sm ${comment.is_owner ? "border-warning" : "border-light"}`}>
+                  <div className="d-flex align-items-center p-2">
+                    <img
+                      src={comment.author_image || "https://res.cloudinary.com/daj7vkzdw/image/upload/v1737570810/default_profile_uehpos.jpg"}
+                      alt="Profile"
+                      className="rounded-circle me-2 border"
+                      width="40"
+                      height="40"
+                    />
+                    <div>
+                      <strong className="text-primary">{comment.author}</strong>
+                      <p className="text-muted small">
+                        {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
+                      </p>
+                    </div>
+                  </div>
+                  <Card.Body className="p-3">
+                    {comment.content}
                     {comment.is_owner && (
                       <>
                         <Button

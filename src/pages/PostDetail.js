@@ -43,17 +43,19 @@ const PostDetail = () => {
 
   const fetchComments = async () => {
     try {
-      const response = await axiosReq.get(`posts/${postId}/comments/`);
-      const updatedComments = response.data.map((comment) => ({
-        ...comment,
-        is_owner: comment.is_owner ?? false,
-      }));
-      setComments(updatedComments);
+      let allComments = [];
+      let nextPage = `posts/${postId}/comments/`;
+  
+      while (nextPage) {
+        const response = await axiosReq.get(nextPage);
+        console.log("🔄 Loaded comments:", response.data);
+  
+        allComments = [...allComments, ...response.data.results];
+        nextPage = response.data.next;
+      }
+      setComments(allComments);
     } catch (err) {
-      console.error(
-        "❌ Error loading comments:",
-        err.response?.data || err.message
-      );
+      console.error("❌ Error while loading comments:", err.response?.data || err.message);
     }
   };
 
@@ -126,18 +128,16 @@ const PostDetail = () => {
 
     try {
       const response = await axiosReq.post(
-        `posts/${postId}/comments/`,
+        `posts/${postId}/comment/`,
         { content: newComment, post: postId },
         { headers: { "X-CSRFToken": localStorage.getItem("csrfToken") } }
       );
 
-      setComments([response.data, ...comments]);
+      console.log("✅ New comment saved succesfully:", response.data);
+      setComments((prevComments) => [response.data, ...prevComments]);
       setNewComment("");
     } catch (err) {
-      console.error(
-        "❌ Error posting comment:",
-        err.response?.data || err.message
-      );
+      console.error("❌ Error while saving comment:", err.response?.data || err.message);
     }
   };
 

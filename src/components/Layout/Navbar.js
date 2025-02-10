@@ -6,7 +6,7 @@ import { AuthContext } from "../../context/AuthContext";
 
 const Navigation = () => {
   const { isAuthenticated, userId, username, logout } = useContext(AuthContext);
-  const setNotifications = useState([]);
+  const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const navigate = useNavigate();
 

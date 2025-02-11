@@ -1,6 +1,16 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Card, Button, Spinner, Alert, Form, Modal } from "react-bootstrap";
+import {
+  Card,
+  Button,
+  Spinner,
+  Alert,
+  Form,
+  Modal,
+  Container,
+  Row,
+  Col,
+} from "react-bootstrap";
 import { axiosReq } from "../api/axios";
 import { formatDistanceToNow } from "date-fns";
 
@@ -18,47 +28,70 @@ const PostDetail = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showCommentEditModal, setShowCommentEditModal] = useState(false);
   const [editContent, setEditContent] = useState("");
+  const [editTitle, setEditTitle] = useState("");
+  const [editImage, setEditImage] = useState(null);
 
+  // Fetch Post Data
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
-      await fetchPost();
-      await fetchComments();
+      try {
+        const response = await axiosReq.get(`posts/${postId}/`);
+        setPost(response.data);
+      } catch (err) {
+        console.error(
+          "❌ Error fetching post:",
+          err.response?.data || err.message
+        );
+        setError("Failed to load the post.");
+      }
       setLoading(false);
     };
-  
+
     fetchData();
   }, [postId]);
 
-  const fetchPost = async () => {
-    try {
-      const response = await axiosReq.get(`posts/${postId}/`);
-      setPost({
-        ...response.data,
-        is_owner: response.data.is_owner ?? false,
-      });
-    } catch (err) {
-      setError("Failed to load the post. Please try again later.");
-    }
-  };
-
-  const fetchComments = async () => {
-    try {
-      let allComments = [];
-      let nextPage = `posts/${postId}/comments/`;
-  
-      while (nextPage) {
-        const response = await axiosReq.get(nextPage);
-        console.log("🔄 Loaded comments:", response.data);
-  
-        allComments = [...allComments, ...response.data.results];
-        nextPage = response.data.next;
+  // Fetch Comments
+  useEffect(() => {
+    const fetchComments = async () => {
+      try {
+        const response = await axiosReq.get(`posts/${postId}/comments/`);
+        setComments(response.data.results);
+      } catch (err) {
+        console.error(
+          "❌ Error loading comments:",
+          err.response?.data || err.message
+        );
       }
-      setComments(allComments);
-    } catch (err) {
-      console.error("❌ Error while loading comments:", err.response?.data || err.message);
-    }
-  };
+    };
+
+    fetchComments();
+  }, [postId]);
+
+  // Debugging Logs
+  console.log("📌 Check Post Data before rendering:", post);
+  console.log("📌 Check Modals state:", {
+    showEditModal,
+    showCommentEditModal,
+  });
+
+  //  Error handling: If `post === null`
+  if (loading) {
+    return (
+      <Container className="text-center mt-5">
+        <Spinner animation="border" variant="primary" />
+        <p>Loading post...</p>
+      </Container>
+    );
+  }
+
+  if (!post) {
+    return (
+      <Container className="text-center mt-5">
+        <Alert variant="danger">{error || "Post not found."}</Alert>
+      </Container>
+    );
+  }
 
   const handleLike = async () => {
     if (post?.has_liked) {
@@ -66,7 +99,7 @@ const PostDetail = () => {
         await axiosReq.delete(`posts/${postId}/like/`, {
           headers: { "X-CSRFToken": localStorage.getItem("csrfToken") },
         });
-  
+
         setPost((prevPost) => ({
           ...prevPost,
           has_liked: false,
@@ -82,7 +115,7 @@ const PostDetail = () => {
           {},
           { headers: { "X-CSRFToken": localStorage.getItem("csrfToken") } }
         );
-  
+
         setPost((prevPost) => ({
           ...prevPost,
           has_liked: true,
@@ -93,6 +126,35 @@ const PostDetail = () => {
       }
     }
     setIsLiking(false);
+  };
+
+  const handleEditPost = async () => {
+    console.log("📤 Sending PUT request...");
+    console.log("📌 Updated Post Data:", { editTitle, editContent, editImage });
+
+    try {
+      const formData = new FormData();
+      formData.append("title", editTitle);
+      formData.append("description", editContent);
+      formData.append("category", post.category);
+
+      if (editImage instanceof File) {
+        formData.append("image", editImage);
+      }
+
+      const response = await axiosReq.put(`posts/${postId}/`, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
+      console.log("✅ Post successfully updated:", response.data);
+      setPost(response.data);
+      setShowEditModal(false);
+    } catch (err) {
+      console.error(
+        "❌ Error editing post:",
+        err.response?.data || err.message
+      );
+    }
   };
 
   const handleDeletePost = async () => {
@@ -106,20 +168,6 @@ const PostDetail = () => {
       navigate("/");
     } catch (err) {
       console.error("Error deleting post:", err);
-    }
-  };
-
-  const handleEditPost = async () => {
-    try {
-      const response = await axiosReq.put(
-        `posts/${postId}/`,
-        { description: editContent },
-        { headers: { "X-CSRFToken": localStorage.getItem("csrfToken") } }
-      );
-      setPost(response.data);
-      setShowEditModal(false);
-    } catch (err) {
-      console.error("Error editing post:", err);
     }
   };
 
@@ -138,7 +186,10 @@ const PostDetail = () => {
       setComments((prevComments) => [response.data, ...prevComments]);
       setNewComment("");
     } catch (err) {
-      console.error("❌ Error while saving comment:", err.response?.data || err.message);
+      console.error(
+        "❌ Error while saving comment:",
+        err.response?.data || err.message
+      );
     }
   };
 
@@ -189,141 +240,220 @@ const PostDetail = () => {
     <div className="container mt-4">
       {loading && <Spinner animation="border" variant="primary" />}
       {error && <Alert variant="danger">{error}</Alert>}
-
       {post && (
-        <Card className="shadow-sm">
-          <Card.Body>
-            <Card.Title>{post.title}</Card.Title>
-            <Card.Text>{post.description}</Card.Text>
-            <div className="d-flex align-items-center">
-              <Button
-                variant="outline-primary"
-                onClick={handleLike}
-                disabled={isLiking}
-              >
-                ❤️ Like {post.likes_count}
-              </Button>
-
-              {post?.is_owner && (
-                <>
-                  <Button
-                    variant="outline-warning"
-                    className="ms-2"
-                    onClick={() => {
-                      setEditContent(post.description);
-                      setShowEditModal(true);
+        <Container className="d-flex justify-content-center">
+          <Row>
+            <Col md={12} lg={11}>
+              <Card className="shadow-sm">
+                <Card.Body>
+                  <Card.Img
+                    variant="top"
+                    src={
+                      post.image ||
+                      "https://res.cloudinary.com/daj7vkzdw/image/upload/v1737570810/default_profile_uehpos.jpg"
+                    }
+                    alt="Post Image"
+                    className="img-fluid mb-3"
+                    style={{
+                      width: "100%",
+                      maxHeight: "400px",
+                      objectFit: "cover",
+                      borderRadius: "8px",
                     }}
-                  >
-                    ✏️ Edit
-                  </Button>
-                  <Button
-                    variant="outline-danger"
-                    className="ms-2"
-                    onClick={handleDeletePost}
-                  >
-                    🗑 Delete
-                  </Button>
-                </>
-              )}
-            </div>
+                  />
+                  <Card.Title>{post.title}</Card.Title>
+                  <Card.Subtitle className="mb-2 text-muted">
+                    Category:{" "}
+                    {post.category
+                      ? post.category.charAt(0).toUpperCase() +
+                        post.category.slice(1)
+                      : "General"}
+                  </Card.Subtitle>
+                  <Card.Text>{post.description}</Card.Text>
+                  <div className="d-flex align-items-center">
+                    <Button
+                      variant="outline-primary"
+                      onClick={handleLike}
+                      disabled={isLiking}
+                    >
+                      ❤️ Like {post.likes_count}
+                    </Button>
 
-            <hr />
-
-            <h5>Comments</h5>
-
-            {/* Comment textfield */}
-            <Form onSubmit={handleCommentSubmit} className="mt-3">
-              <Form.Group>
-                <Form.Control
-                  type="text"
-                  placeholder="Write a comment..."
-                  value={newComment}
-                  onChange={(e) => setNewComment(e.target.value)}
-                />
-              </Form.Group>
-              <Button type="submit" className="mt-2" variant="primary">
-                Post Comment
-              </Button>
-            </Form>
-
-            {/* Comment View */}
-            {comments.length === 0 ? (
-              <p className="mt-3">No comments yet. Be the first to comment!</p>
-            ) : (
-              comments.map((comment) => (
-                <Card key={comment.id} className={`mb-2 p-2 shadow-sm ${comment.is_owner ? "border-warning" : "border-light"}`}>
-                  <div className="d-flex align-items-center p-2">
-                    <img
-                      src={comment.author_image || "https://res.cloudinary.com/daj7vkzdw/image/upload/v1737570810/default_profile_uehpos.jpg"}
-                      alt="Profile"
-                      className="rounded-circle me-2 border"
-                      width="40"
-                      height="40"
-                    />
-                    <div>
-                      <strong className="text-primary">{comment.author}</strong>
-                      <p className="text-muted small">
-                        {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
-                      </p>
-                    </div>
-                  </div>
-                  <Card.Body className="p-3">
-                    {comment.content}
-                    {comment.is_owner && (
+                    {post?.is_owner && (
                       <>
                         <Button
                           variant="outline-warning"
-                          size="sm"
                           className="ms-2"
-                          onClick={() => handleEditComment(comment)}
+                          onClick={() => {
+                            setEditTitle(post.title);
+                            setEditContent(post.description);
+                            setEditImage(post.image);
+                            setShowEditModal(true);
+                          }}
                         >
                           ✏️ Edit
                         </Button>
                         <Button
                           variant="outline-danger"
-                          size="sm"
                           className="ms-2"
-                          onClick={() => handleDeleteComment(comment.id)}
+                          onClick={handleDeletePost}
                         >
                           🗑 Delete
                         </Button>
                       </>
                     )}
-                  </Card.Body>
-                </Card>
-              ))
-            )}
-          </Card.Body>
-        </Card>
+                  </div>
+
+                  <hr />
+
+                  <h5>Comments</h5>
+
+                  {/* Comment textfield */}
+                  <Form onSubmit={handleCommentSubmit} className="mt-3">
+                    <Form.Group>
+                      <Form.Control
+                        type="text"
+                        placeholder="Write a comment..."
+                        value={newComment}
+                        onChange={(e) => setNewComment(e.target.value)}
+                      />
+                    </Form.Group>
+                    <Button type="submit" className="mt-2" variant="primary">
+                      Post Comment
+                    </Button>
+                  </Form>
+
+                  {/* Comment View */}
+                  {comments.length === 0 ? (
+                    <p className="mt-3">
+                      No comments yet. Be the first to comment!
+                    </p>
+                  ) : (
+                    comments.map((comment) => (
+                      <Card
+                        key={comment.id}
+                        className={`mb-2 p-2 shadow-sm ${
+                          comment.is_owner ? "border-warning" : "border-light"
+                        }`}
+                      >
+                        <div className="d-flex align-items-center p-2">
+                          <img
+                            src={
+                              comment.author_image ||
+                              "https://res.cloudinary.com/daj7vkzdw/image/upload/v1737570810/default_profile_uehpos.jpg"
+                            }
+                            alt="Profile"
+                            className="rounded-circle me-2 border"
+                            width="40"
+                            height="40"
+                          />
+                          <div>
+                            <strong className="text-primary">
+                              {comment.author}
+                            </strong>
+                            <p className="text-muted small">
+                              {formatDistanceToNow(
+                                new Date(comment.created_at),
+                                {
+                                  addSuffix: true,
+                                }
+                              )}
+                            </p>
+                          </div>
+                        </div>
+                        <Card.Body className="p-3">
+                          {comment.content}
+                          {comment.is_owner && (
+                            <>
+                              <Button
+                                variant="outline-warning"
+                                className="ms-2"
+                                onClick={() => {
+                                  setEditCommentId(comment.id);
+                                  setEditCommentContent(comment.content);
+                                  setShowCommentEditModal(true);
+                                }}
+                              >
+                                ✏️ Edit
+                              </Button>
+                              <Button
+                                variant="outline-danger"
+                                size="sm"
+                                className="ms-2"
+                                onClick={() => handleDeleteComment(comment.id)}
+                              >
+                                🗑 Delete
+                              </Button>
+                            </>
+                          )}
+                        </Card.Body>
+                      </Card>
+                    ))
+                  )}
+                </Card.Body>
+              </Card>
+            </Col>
+          </Row>
+        </Container>
       )}
 
       {/* Edit Post Modal */}
-      <Modal show={showEditModal} onHide={() => setShowEditModal(false)}>
-        <Modal.Header closeButton>
-          <Modal.Title>Edit Post</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <Form>
-            <Form.Group>
-              <Form.Label>Description</Form.Label>
-              <Form.Control
-                as="textarea"
-                rows={3}
-                value={editContent}
-                onChange={(e) => setEditContent(e.target.value)}
-              />
-            </Form.Group>
-          </Form>
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowEditModal(false)}>
-            Cancel
-          </Button>
-          <Button variant="primary" onClick={handleEditPost}>
-            Save Changes
-          </Button>
-        </Modal.Footer>
-      </Modal>
+      {showEditModal && (
+        <Modal show={showEditModal} onHide={() => setShowEditModal(false)}>
+          <Modal.Header closeButton>
+            <Modal.Title>Edit Post</Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            <Form>
+              <Form.Group className="mb-3">
+                <Form.Label>Title</Form.Label>
+                <Form.Control
+                  type="text"
+                  value={editTitle}
+                  onChange={(e) => setEditTitle(e.target.value)}
+                />
+              </Form.Group>
+              <Form.Group className="mb-3">
+                <Form.Label>Description</Form.Label>
+                <Form.Control
+                  as="textarea"
+                  rows={3}
+                  value={editContent}
+                  onChange={(e) => setEditContent(e.target.value)}
+                />
+              </Form.Group>
+              <Form.Group className="mb-3">
+                <Form.Label>Upload New Image</Form.Label>
+                <Form.Control
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => setEditImage(e.target.files[0])}
+                />
+                {editImage && (
+                  <img
+                    src={
+                      typeof editImage === "string"
+                        ? editImage
+                        : URL.createObjectURL(editImage)
+                    }
+                    alt="Current"
+                    className="mt-2 img-fluid"
+                    style={{ maxHeight: "200px", borderRadius: "8px" }}
+                  />
+                )}
+              </Form.Group>
+            </Form>
+          </Modal.Body>
+          <Modal.Footer>
+            <Button variant="secondary" onClick={() => setShowEditModal(false)}>
+              Cancel
+            </Button>
+            <Button variant="primary" onClick={handleEditPost} disabled={false}>
+              Save Changes
+            </Button>
+          </Modal.Footer>
+        </Modal>
+      )}
 
       {/* Edit Comment Modal */}
       <Modal
@@ -348,13 +478,17 @@ const PostDetail = () => {
           >
             Cancel
           </Button>
-          <Button variant="primary" onClick={handleSaveEditComment}>
+          <Button
+            variant="primary"
+            onClick={handleSaveEditComment}
+            disabled={!editCommentContent.trim()}
+          >
             Save Changes
           </Button>
         </Modal.Footer>
       </Modal>
-      </div>
-    );
-  };
+    </div>
+  );
+};
 
 export default PostDetail;

@@ -21,23 +21,17 @@ const Posts = () => {
     try {
       console.log("🔄 Fetching latest posts...");
       const response = await axiosReq.get("posts/feed/");
-      console.log("✅ API Response:", response.data);
 
-      if (Array.isArray(response.data.results)) {
-        console.log("✅ API contains 'results' array!");
-        setPosts(response.data.results);
-      } else if (Array.isArray(response.data)) {
-        console.warn("⚠️ API returned array directly, using response.data.");
-        setPosts(response.data);
-      } else {
-        console.error("❌ API format unexpected:", response.data);
-        setError("Unexpected API response format.");
+      let fetchedPosts = response.data?.results ?? response.data;
+      if (!Array.isArray(fetchedPosts)) {
+        console.warn("⚠️ Unexpected API response format:", response.data);
+        fetchedPosts = [];
       }
+
+      console.log(`✅ Posts fetched (${fetchedPosts.length}):`, fetchedPosts);
+      setPosts(fetchedPosts);
     } catch (err) {
-      console.error(
-        "❌ Error fetching posts:",
-        err.response?.data || err.message
-      );
+      console.error("❌ Failed to load posts:", err);
       setError("Failed to load posts. Please try again.");
     } finally {
       setLoading(false);
@@ -62,8 +56,20 @@ const Posts = () => {
           {posts.map((post) => (
             <Col md={6} lg={4} key={post.id}>
               <Card className="mb-3 shadow-sm">
+                <Card.Img
+                  variant="top"
+                  src={
+                    post.image ||
+                    "https://res.cloudinary.com/daj7vkzdw/image/upload/v1737570695/default_post_tuonop.jpg"
+                  }
+                  alt="Post Image"
+                  className="img-fluid"
+                />
                 <Card.Body>
                   <Card.Title>{post.title}</Card.Title>
+                  <Card.Subtitle className="mb-2 text-muted">
+                    Category: {post.category || "Unknown"}
+                  </Card.Subtitle>
                   <Card.Text>{post.description}</Card.Text>
                   <Button as={Link} to={`/posts/${post.id}/`} variant="primary">
                     View Details

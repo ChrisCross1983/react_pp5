@@ -8,6 +8,7 @@ import SittingRequests from "./components/SittingRequests";
 import Notifications from "./pages/Notifications";
 import Home from "./pages/Home";
 import Posts from "./pages/Posts";
+import CreatePost from "./pages/CreatePost";
 import PostDetail from "./pages/PostDetail";
 import Profile from "./pages/Profile";
 import { AuthProvider, AuthContext } from "./context/AuthContext";
@@ -23,6 +24,7 @@ const AppRoutes = () => {
       <Route path="/login" element={isAuthenticated ? <Navigate to="/" /> : <Login />} />
       <Route path="/resend-email" element={<ResendEmail />} />
       <Route path="/posts" element={<Posts />} />
+      <Route path="/create-post" element={<CreatePost />} />
       <Route path="/posts/:id" element={<PostDetail />} />
       <Route path="/profile/:id" element={<Profile />} />
       <Route path="/notifications" element={<Notifications />} />

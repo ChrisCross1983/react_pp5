@@ -1,5 +1,13 @@
 import React, { useState, useEffect } from "react";
-import { Card, Button, Spinner, Alert, Container, Row, Col } from "react-bootstrap";
+import {
+  Card,
+  Button,
+  Spinner,
+  Alert,
+  Container,
+  Row,
+  Col,
+} from "react-bootstrap";
 import { Link } from "react-router-dom";
 import { axiosReq } from "../api/axios";
 
@@ -8,25 +16,35 @@ const Posts = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // ✅ Dummy-Posts for testing
-  const dummyPosts = [
-    { id: 1, title: "Need a Cat-Sitter in Berlin", description: "Looking for a sitter for my 2 cats next weekend!" },
-    { id: 2, title: "Offering Cat-Sitting in Munich", description: "Happy to take care of your cat while you're away!" },
-  ];
+  const fetchPosts = async () => {
+    setLoading(true);
+    try {
+      console.log("🔄 Fetching latest posts...");
+      const response = await axiosReq.get("posts/feed/");
+      console.log("✅ API Response:", response.data);
+
+      if (Array.isArray(response.data.results)) {
+        console.log("✅ API contains 'results' array!");
+        setPosts(response.data.results);
+      } else if (Array.isArray(response.data)) {
+        console.warn("⚠️ API returned array directly, using response.data.");
+        setPosts(response.data);
+      } else {
+        console.error("❌ API format unexpected:", response.data);
+        setError("Unexpected API response format.");
+      }
+    } catch (err) {
+      console.error(
+        "❌ Error fetching posts:",
+        err.response?.data || err.message
+      );
+      setError("Failed to load posts. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchPosts = async () => {
-      setLoading(true);
-      try {
-        const response = await axiosReq.get("posts/feed/");
-        setPosts(response.data.results?.length ? response.data.results : dummyPosts);
-      } catch (err) {
-        setError("Failed to load posts. Please try again.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchPosts();
   }, []);
 

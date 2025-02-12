@@ -253,7 +253,7 @@ const PostDetail = () => {
             </Card>
           </Col>
 
-          {/* Main Section - Post */}
+          {/* Main Section - Post & Comments */}
           <Col lg={6} md={12}>
             {/* 🔙 Back Button */}
             <Button
@@ -265,6 +265,7 @@ const PostDetail = () => {
               ← Back
             </Button>
 
+            {/* Posts */}
             <Card className="shadow-sm p-3 mb-4">
               <Card.Img
                 variant="top"
@@ -337,142 +338,88 @@ const PostDetail = () => {
                 </div>
               </Card.Body>
             </Card>
-          </Col>
 
-          {/* 👉 Mobile comments under posts */}
-          <Col xs={12} className="d-lg-none">
-            <Card className="shadow-sm p-3">
-              <Card.Title>💬 Comments</Card.Title>
+            {/* Comments under Post */}
+            <Row>
+              <Col xs={12}>
+                <Card className="shadow-sm p-3">
+                  <Card.Title>💬 Comments</Card.Title>
 
-              <Form onSubmit={handleCommentSubmit} className="mt-3">
-                <Form.Group>
-                  <Form.Control
-                    type="text"
-                    placeholder="Write a comment..."
-                    value={newComment}
-                    onChange={(e) => setNewComment(e.target.value)}
-                  />
-                </Form.Group>
-                <Button type="submit" className="mt-2 w-100" variant="primary">
-                  Post Comment
-                </Button>
-              </Form>
-
-              {comments.length === 0 ? (
-                <p className="mt-3 text-muted">
-                  No comments yet. Be the first to comment!
-                </p>
-              ) : (
-                <>
-                  {comments.slice(0, visibleComments).map((comment) => (
-                    <Card key={comment.id} className="mt-2 p-2 shadow-sm">
-                      <div className="d-flex align-items-center p-2">
-                        <img
-                          src={
-                            comment.author_image ||
-                            "https://res.cloudinary.com/daj7vkzdw/image/upload/v1737570810/default_profile_uehpos.jpg"
-                          }
-                          alt="Profile"
-                          className="rounded-circle border me-2"
-                          width="40"
-                          height="40"
-                        />
-                        <div className="flex-grow-1">
-                          <strong className="text-primary">
-                            {comment.author}
-                          </strong>
-                          <p className="text-muted small">
-                            {formatDistanceToNow(new Date(comment.created_at), {
-                              addSuffix: true,
-                            })}
-                          </p>
-                          <p className="mb-1">{comment.content}</p>
-                        </div>
-                      </div>
-                    </Card>
-                  ))}
-
-                  {/* "More..." Button if there are more than 5 comments */}
-                  {comments.length > visibleComments && (
-                    <Button
-                      variant="link"
-                      className="mt-2 w-100"
-                      onClick={() => setVisibleComments(visibleComments + 5)}
-                    >
-                      More...
+                  <Form onSubmit={handleCommentSubmit} className="mt-3">
+                    <Form.Group>
+                      <Form.Control
+                        type="text"
+                        placeholder="Write a comment..."
+                        value={newComment}
+                        onChange={(e) => setNewComment(e.target.value)}
+                      />
+                    </Form.Group>
+                    <Button type="submit" className="mt-2 w-100" variant="primary">
+                      Post Comment
                     </Button>
+                  </Form>
+
+                  {comments.length === 0 ? (
+                    <p className="mt-3 text-muted">No comments yet. Be the first to comment!</p>
+                  ) : (
+                    <>
+                      {comments.slice(0, visibleComments).map((comment) => (
+                        <Card key={comment.id} className="mt-2 p-2 shadow-sm">
+                          <div className="d-flex align-items-center p-2">
+                            <img
+                              src={comment.author_image || "https://res.cloudinary.com/daj7vkzdw/image/upload/v1737570810/default_profile_uehpos.jpg"}
+                              alt="Profile"
+                              className="rounded-circle border me-2"
+                              width="40"
+                              height="40"
+                            />
+                            <div className="flex-grow-1">
+                              <strong className="text-primary">{comment.author}</strong>
+                              <p className="text-muted small">
+                                {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
+                              </p>
+                              <p className="mb-1">{comment.content}</p>
+                            </div>
+                          </div>
+
+                          {/* 🛠 Edit & Delete */}
+                          {comment.is_owner && (
+                            <div className="d-flex justify-content-end">
+                              <Button
+                                variant="outline-warning"
+                                size="sm"
+                                className="me-2"
+                                onClick={() => handleEditComment(comment)}
+                              >
+                                ✏️ Edit
+                              </Button>
+                              <Button
+                                variant="outline-danger"
+                                size="sm"
+                                onClick={() => handleDeleteComment(comment.id)}
+                              >
+                                🗑 Delete
+                              </Button>
+                            </div>
+                          )}
+                        </Card>
+                      ))}
+
+                      {/* "More..." Button */}
+                      {comments.length > visibleComments && (
+                        <Button
+                          variant="link"
+                          className="mt-2 w-100"
+                          onClick={() => setVisibleComments(visibleComments + 5)}
+                        >
+                          More...
+                        </Button>
+                      )}
+                    </>
                   )}
-                </>
-              )}
-            </Card>
-          </Col>
-
-          {/* 👉 Desktop Kommentare in Sidebar */}
-          <Col lg={3} className="d-none d-lg-block">
-            <Card className="shadow-sm p-3">
-              <Card.Title>💬 Comments</Card.Title>
-
-              <Form onSubmit={handleCommentSubmit} className="mt-3">
-                <Form.Group>
-                  <Form.Control
-                    type="text"
-                    placeholder="Write a comment..."
-                    value={newComment}
-                    onChange={(e) => setNewComment(e.target.value)}
-                  />
-                </Form.Group>
-                <Button type="submit" className="mt-2 w-100" variant="primary">
-                  Post Comment
-                </Button>
-              </Form>
-
-              {comments.length === 0 ? (
-                <p className="mt-3 text-muted">
-                  No comments yet. Be the first to comment!
-                </p>
-              ) : (
-                <>
-                  {comments.slice(0, visibleComments).map((comment) => (
-                    <Card key={comment.id} className="mt-2 p-2 shadow-sm">
-                      <div className="d-flex align-items-center p-2">
-                        <img
-                          src={
-                            comment.author_image ||
-                            "https://res.cloudinary.com/daj7vkzdw/image/upload/v1737570810/default_profile_uehpos.jpg"
-                          }
-                          alt="Profile"
-                          className="rounded-circle border me-2"
-                          width="40"
-                          height="40"
-                        />
-                        <div className="flex-grow-1">
-                          <strong className="text-primary">
-                            {comment.author}
-                          </strong>
-                          <p className="text-muted small">
-                            {formatDistanceToNow(new Date(comment.created_at), {
-                              addSuffix: true,
-                            })}
-                          </p>
-                          <p className="mb-1">{comment.content}</p>
-                        </div>
-                      </div>
-                    </Card>
-                  ))}
-
-                  {/* "More..." Button falls es mehr als 5 Kommentare gibt */}
-                  {comments.length > visibleComments && (
-                    <Button
-                      variant="link"
-                      className="mt-2 w-100"
-                      onClick={() => setVisibleComments(visibleComments + 5)}
-                    >
-                      More...
-                    </Button>
-                  )}
-                </>
-              )}
-            </Card>
+                </Card>
+              </Col>
+            </Row>
           </Col>
         </Row>
       )}

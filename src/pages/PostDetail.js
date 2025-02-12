@@ -1,14 +1,16 @@
-import React, { useState, useEffect } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   Card,
   Button,
+  Dropdown,
   Spinner,
   Alert,
   Form,
   Modal,
   Container,
   Row,
+  Badge,
   Col,
 } from "react-bootstrap";
 import { axiosReq } from "../api/axios";
@@ -31,7 +33,28 @@ const PostDetail = () => {
   const [editTitle, setEditTitle] = useState("");
   const [editImage, setEditImage] = useState(null);
   const [expanded, setExpanded] = useState(false);
+  const [isVisible, setIsVisible] = useState(true);
   const [visibleComments, setVisibleComments] = useState(5);
+  const [isSubmitVisible, setIsSubmitVisible] = useState(false);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const commentInputRef = useRef(null);
+  const [editCategory, setEditCategory] = useState("general");
+
+  useEffect(() => {
+    if (post && post.category) {
+      setEditCategory(post.category);
+    }
+  }, [post]);
+
+  // Button functionality
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsVisible(window.scrollY <= 50);
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   // Fetch Post Data
   useEffect(() => {
@@ -76,6 +99,12 @@ const PostDetail = () => {
     showEditModal,
     showCommentEditModal,
   });
+
+  const categoryColors = {
+    "sitting offer": "success",
+    "sitting request": "warning",
+    general: "primary",
+  };
 
   //  Error handling: If `post === null`
   if (loading) {
@@ -132,13 +161,18 @@ const PostDetail = () => {
 
   const handleEditPost = async () => {
     console.log("📤 Sending PUT request...");
-    console.log("📌 Updated Post Data:", { editTitle, editContent, editImage });
+    console.log("📌 Updated Post Data:", {
+      editImage,
+      editTitle,
+      editCategory,
+      editContent,
+    });
 
     try {
       const formData = new FormData();
       formData.append("title", editTitle);
+      formData.append("category", editCategory);
       formData.append("description", editContent);
-      formData.append("category", post.category);
 
       if (editImage instanceof File) {
         formData.append("image", editImage);
@@ -238,6 +272,8 @@ const PostDetail = () => {
     }
   };
 
+  const toggleDropdown = () => setShowDropdown(!showDropdown);
+
   return (
     <Container className="mt-4">
       {loading && <Spinner animation="border" variant="primary" />}
@@ -245,54 +281,29 @@ const PostDetail = () => {
 
       {post && (
         <Row className="justify-content-center">
-          {/* Left sidebar - Widgets */}
-          <Col lg={3} className="d-none d-lg-block">
-            <Card className="shadow-sm p-3 mb-4">
-              <Card.Title>🔥 Top Followed</Card.Title>
-              <p>Coming soon...</p>
-            </Card>
-          </Col>
-
           {/* Main Section - Post & Comments */}
           <Col lg={6} md={12}>
-            {/* 🔙 Back Button */}
+            {/* Floating Back Button */}
             <Button
-              variant="link"
-              className="text-dark mb-3"
+              className={`floating-back-btn ${isVisible ? "" : "hidden"}`}
               onClick={() => navigate(-1)}
-              style={{ fontSize: "1.5rem", textDecoration: "none" }}
             >
-              ← Back
+              ←
             </Button>
 
-            {/* Posts */}
+            {/* Post Author Bar */}
             <Card className="shadow-sm p-3 mb-4">
-              <Card.Img
-                variant="top"
-                src={
-                  post.image ||
-                  "https://res.cloudinary.com/daj7vkzdw/image/upload/v1737570810/default_profile_uehpos.jpg"
-                }
-                alt="Post Image"
-                className="img-fluid mb-3 rounded"
-                style={{
-                  objectFit: "cover",
-                  maxHeight: "400px",
-                }}
-              />
-              <Card.Body>
-                <div className="d-flex align-items-center">
+              <div className="post-author-bar">
+                <div className="post-author-info-container">
                   <img
                     src={
                       post.author_image ||
                       "https://res.cloudinary.com/daj7vkzdw/image/upload/v1737570810/default_profile_uehpos.jpg"
                     }
                     alt="Profile"
-                    className="rounded-circle border me-2"
-                    width="40"
-                    height="40"
+                    className="post-author-avatar"
                   />
-                  <div>
+                  <div className="post-author-info">
                     <strong>{post.author}</strong>
                     <p className="text-muted small">
                       {formatDistanceToNow(new Date(post.created_at), {
@@ -301,41 +312,91 @@ const PostDetail = () => {
                     </p>
                   </div>
                 </div>
-                <Card.Title className="mt-3">{post.title}</Card.Title>
-                <Card.Text>{post.description}</Card.Text>
 
-                {/* Like & Actions */}
-                <div className="d-flex justify-content-between align-items-center mt-3">
-                  <Button
-                    variant="outline-primary"
-                    onClick={handleLike}
-                    disabled={isLiking}
+                {/* 🌟 3 Point Menu */}
+                {post?.is_owner && (
+                  <Dropdown
+                    show={showDropdown}
+                    onToggle={setShowDropdown}
+                    className="post-options"
                   >
-                    ❤️ {post.likes_count}
-                  </Button>
-                  {post?.is_owner && (
-                    <div>
-                      <Button
-                        variant="outline-warning"
-                        className="me-2"
+                    <Dropdown.Toggle
+                      as="button"
+                      className="post-options-btn"
+                      onClick={toggleDropdown}
+                    >
+                      ⋮
+                    </Dropdown.Toggle>
+                    <Dropdown.Menu align="end">
+                      <Dropdown.Item
                         onClick={() => {
                           setEditTitle(post.title);
                           setEditContent(post.description);
                           setEditImage(post.image);
+                          setEditCategory(post.category || "general");
                           setShowEditModal(true);
+                          setShowDropdown(false);
                         }}
                       >
                         ✏️ Edit
-                      </Button>
-                      <Button
-                        variant="outline-danger"
+                      </Dropdown.Item>
+                      <Dropdown.Item
                         onClick={handleDeletePost}
+                        className="text-danger"
                       >
                         🗑 Delete
-                      </Button>
-                    </div>
-                  )}
-                </div>
+                      </Dropdown.Item>
+                    </Dropdown.Menu>
+                  </Dropdown>
+                )}
+              </div>
+
+              {/* Post Picture */}
+              <Card.Img
+                variant="top"
+                src={
+                  post.image ||
+                  "https://res.cloudinary.com/daj7vkzdw/image/upload/v1737570810/default_profile_uehpos.jpg"
+                }
+                alt="Post Image"
+                className="post-image"
+              />
+
+              {/* 🖤 Like & Comment Buttons */}
+              <div className="post-actions">
+                <button
+                  className={`like-button ${post.has_liked ? "active" : ""}`}
+                  onClick={handleLike}
+                  disabled={isLiking}
+                >
+                  {post.has_liked ? "❤️" : "🤍"} {post.likes_count}
+                </button>
+
+                <button
+                  className="comment-button"
+                  onClick={() => {
+                    if (commentInputRef.current) {
+                      commentInputRef.current.scrollIntoView({
+                        behavior: "smooth",
+                        block: "center",
+                      });
+                      commentInputRef.current.focus();
+                    }
+                  }}
+                >
+                  💬 {comments.length}
+                </button>
+              </div>
+
+              <Card.Body>
+                <Card.Title className="mt-3">{post.title}</Card.Title>
+                <Badge
+                  bg={categoryColors[post.category] || "secondary"}
+                  className="mb-2"
+                >
+                  {post.category || "General"}
+                </Badge>
+                <Card.Text>{post.description}</Card.Text>
               </Card.Body>
             </Card>
 
@@ -345,44 +406,94 @@ const PostDetail = () => {
                 <Card className="shadow-sm p-3">
                   <Card.Title>💬 Comments</Card.Title>
 
-                  <Form onSubmit={handleCommentSubmit} className="mt-3">
-                    <Form.Group>
+                  <Form
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      if (!newComment.trim()) return;
+
+                      axiosReq
+                        .post(`posts/${postId}/comment/`, {
+                          content: newComment,
+                          post: postId,
+                        })
+                        .then((response) => {
+                          console.log(
+                            "✅ New comment saved successfully:",
+                            response.data
+                          );
+                          setComments((prevComments) => [
+                            response.data,
+                            ...prevComments,
+                          ]);
+                          setNewComment("");
+                        })
+                        .catch((err) => {
+                          console.error(
+                            "❌ Error while saving comment:",
+                            err.response?.data || err.message
+                          );
+                        });
+                    }}
+                    className="mt-3 position-relative"
+                  >
+                    <Form.Group className="position-relative">
                       <Form.Control
+                        id="comment-input"
                         type="text"
                         placeholder="Write a comment..."
                         value={newComment}
                         onChange={(e) => setNewComment(e.target.value)}
+                        ref={commentInputRef}
                       />
+                      {/* Dynamic Send Button */}
+                      {newComment.trim().length > 0 && (
+                        <Button type="submit" className="comment-submit-btn">
+                          ➤
+                        </Button>
+                      )}
                     </Form.Group>
-                    <Button type="submit" className="mt-2 w-100" variant="primary">
-                      Post Comment
-                    </Button>
                   </Form>
 
                   {comments.length === 0 ? (
-                    <p className="mt-3 text-muted">No comments yet. Be the first to comment!</p>
+                    <p className="mt-3 text-muted">
+                      No comments yet. Be the first to comment!
+                    </p>
                   ) : (
                     <>
                       {comments.slice(0, visibleComments).map((comment) => (
                         <Card key={comment.id} className="mt-2 p-2 shadow-sm">
-                          <div className="d-flex align-items-center p-2">
+                          <div className="comment-header">
                             <img
-                              src={comment.author_image || "https://res.cloudinary.com/daj7vkzdw/image/upload/v1737570810/default_profile_uehpos.jpg"}
+                              src={
+                                comment.author_image ||
+                                "https://res.cloudinary.com/daj7vkzdw/image/upload/v1737570810/default_profile_uehpos.jpg"
+                              }
                               alt="Profile"
-                              className="rounded-circle border me-2"
-                              width="40"
-                              height="40"
+                              className="comment-avatar"
                             />
-                            <div className="flex-grow-1">
-                              <strong className="text-primary">{comment.author}</strong>
+                            <div className="comment-meta">
+                              <strong className="text-primary">
+                                {comment.author}
+                              </strong>
                               <p className="text-muted small">
-                                {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
+                                {formatDistanceToNow(
+                                  new Date(comment.created_at),
+                                  { addSuffix: true }
+                                )}
                               </p>
-                              <p className="mb-1">{comment.content}</p>
                             </div>
                           </div>
+                          <p className="mb-1">{comment.content}</p>
+                          {isSubmitVisible && (
+                            <Button
+                              type="submit"
+                              className="comment-submit-btn"
+                            >
+                              ➤
+                            </Button>
+                          )}
 
-                          {/* 🛠 Edit & Delete */}
+                          {/* 🛠 Edit & Delete Comments */}
                           {comment.is_owner && (
                             <div className="d-flex justify-content-end">
                               <Button
@@ -410,7 +521,9 @@ const PostDetail = () => {
                         <Button
                           variant="link"
                           className="mt-2 w-100"
-                          onClick={() => setVisibleComments(visibleComments + 5)}
+                          onClick={() =>
+                            setVisibleComments(visibleComments + 5)
+                          }
                         >
                           More...
                         </Button>
@@ -433,12 +546,31 @@ const PostDetail = () => {
           <Modal.Body>
             <Form>
               <Form.Group className="mb-3">
+                <Form.Label>Post Image</Form.Label>
+                <Form.Control
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => setEditImage(e.target.files[0])}
+                />
+              </Form.Group>
+              <Form.Group className="mb-3">
                 <Form.Label>Title</Form.Label>
                 <Form.Control
                   type="text"
                   value={editTitle}
                   onChange={(e) => setEditTitle(e.target.value)}
                 />
+              </Form.Group>
+              <Form.Group className="mb-3">
+                <Form.Label>Category</Form.Label>
+                <Form.Select
+                  value={editCategory}
+                  onChange={(e) => setEditCategory(e.target.value)}
+                >
+                  <option value="sitting offer">Sitting Offer</option>
+                  <option value="sitting request">Sitting Request</option>
+                  <option value="general">General</option>
+                </Form.Select>
               </Form.Group>
               <Form.Group className="mb-3">
                 <Form.Label>Description</Form.Label>

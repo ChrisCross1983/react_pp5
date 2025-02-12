@@ -2,35 +2,222 @@
 
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
+    "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
 code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+  font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New",
     monospace;
 }
 
 /* Highlight comments from own users visually */
 .border-warning {
-  border-left: 4px solid #ff9800 !important;  
+  border-left: 4px solid #ff9800 !important;
   background-color: rgba(255, 152, 0, 0.1);
 }
 
 /* Standard-Comments */
 .border-light {
-  border-left: 4px solid #f8f9fa !important;  
+  border-left: 4px solid #f8f9fa !important;
   background-color: rgba(248, 249, 250, 0.5);
 }
 
-/* Profile Picture Styling */
+/* Post Functionality */
+
+/* Post Options */
+.post-options {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+}
+
+/* Button-Styling for 3 Point Menu */
+.post-options-btn {
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  color: #666;
+  transition: color 0.2s;
+}
+
+.post-options-btn:hover {
+  color: black;
+}
+
+/* Dropdown-Styles */
+.dropdown-menu {
+  min-width: 120px;
+  border-radius: 6px;
+  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.dropdown-item {
+  padding: 8px 12px;
+  font-size: 14px;
+}
+
+.dropdown-item:hover {
+  background-color: #f5f5f5;
+}
+
+/* Comment Profile Picture Styling */
 .comment-avatar {
   border: 2px solid #ddd;
   border-radius: 50%;
   width: 40px;
   height: 40px;
   object-fit: cover;
+}
+
+/* Author Area */
+.post-author-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 8px 12px;
+}
+
+.post-author-info-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Profile Picture */
+.post-author-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 2px solid #ddd;
+  object-fit: cover;
+  margin-right: 10px;
+}
+
+.post-author-info strong {
+  font-size: 14px;
+}
+
+.post-author-info p {
+  font-size: 12px;
+  color: #666;
+  margin: 0;
+}
+
+/* Picture */
+.post-image {
+  width: 100%;
+  max-height: 400px;
+  object-fit: cover;
+  display: block;
+}
+
+/* Floating Back Button */
+.floating-back-btn {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background-color: rgba(0, 0, 0, 0.8);
+  color: white;
+  font-size: 1.5rem;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+  z-index: 1050;
+  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
+}
+
+.floating-back-btn.hidden {
+  opacity: 0.3;
+  transform: scale(0.9);
+}
+
+/* Comment Design */
+.comment-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.comment-avatar {
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  object-fit: cover;
+}
+
+.comment-meta {
+  display: flex;
+  flex-direction: column;
+}
+
+.comment-meta strong {
+  font-size: 14px;
+}
+
+.comment-meta .text-muted {
+  font-size: 12px;
+}
+
+/* Like- & Comment Symbols */
+.post-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 15px;
+}
+
+.post-actions button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 24px;
+  transition: transform 0.2s ease-in-out;
+}
+
+.post-actions button:hover {
+  transform: scale(1.1);
+}
+
+/* Color for active likes */
+.like-button.active {
+  color: red;
+}
+
+/* Comment Color */
+.comment-button {
+  color: #333;
+}
+
+.comment-submit-btn {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  background-color: rgba(0, 0, 0, 0.8);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  font-size: 1.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.3s ease-in-out, transform 0.2s ease-in-out;
+}
+
+.comment-submit-btn:hover {
+  background-color: rgba(0, 0, 0, 1);
+  transform: scale(1.1);
 }

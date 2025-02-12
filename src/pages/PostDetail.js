@@ -30,6 +30,8 @@ const PostDetail = () => {
   const [editContent, setEditContent] = useState("");
   const [editTitle, setEditTitle] = useState("");
   const [editImage, setEditImage] = useState(null);
+  const [expanded, setExpanded] = useState(false);
+  const [visibleComments, setVisibleComments] = useState(5);
 
   // Fetch Post Data
   useEffect(() => {
@@ -237,164 +239,242 @@ const PostDetail = () => {
   };
 
   return (
-    <div className="container mt-4">
+    <Container className="mt-4">
       {loading && <Spinner animation="border" variant="primary" />}
       {error && <Alert variant="danger">{error}</Alert>}
+
       {post && (
-        <Container className="d-flex justify-content-center">
-          <Row>
-            <Col md={12} lg={11}>
-              <Card className="shadow-sm">
-                <Card.Body>
-                  <Card.Img
-                    variant="top"
+        <Row className="justify-content-center">
+          {/* Left sidebar - Widgets */}
+          <Col lg={3} className="d-none d-lg-block">
+            <Card className="shadow-sm p-3 mb-4">
+              <Card.Title>🔥 Top Followed</Card.Title>
+              <p>Coming soon...</p>
+            </Card>
+          </Col>
+
+          {/* Main Section - Post */}
+          <Col lg={6} md={12}>
+            {/* 🔙 Back Button */}
+            <Button
+              variant="link"
+              className="text-dark mb-3"
+              onClick={() => navigate(-1)}
+              style={{ fontSize: "1.5rem", textDecoration: "none" }}
+            >
+              ← Back
+            </Button>
+
+            <Card className="shadow-sm p-3 mb-4">
+              <Card.Img
+                variant="top"
+                src={
+                  post.image ||
+                  "https://res.cloudinary.com/daj7vkzdw/image/upload/v1737570810/default_profile_uehpos.jpg"
+                }
+                alt="Post Image"
+                className="img-fluid mb-3 rounded"
+                style={{
+                  objectFit: "cover",
+                  maxHeight: "400px",
+                }}
+              />
+              <Card.Body>
+                <div className="d-flex align-items-center">
+                  <img
                     src={
-                      post.image ||
+                      post.author_image ||
                       "https://res.cloudinary.com/daj7vkzdw/image/upload/v1737570810/default_profile_uehpos.jpg"
                     }
-                    alt="Post Image"
-                    className="img-fluid mb-3"
-                    style={{
-                      width: "100%",
-                      maxHeight: "400px",
-                      objectFit: "cover",
-                      borderRadius: "8px",
-                    }}
+                    alt="Profile"
+                    className="rounded-circle border me-2"
+                    width="40"
+                    height="40"
                   />
-                  <Card.Title>{post.title}</Card.Title>
-                  <Card.Subtitle className="mb-2 text-muted">
-                    Category:{" "}
-                    {post.category
-                      ? post.category.charAt(0).toUpperCase() +
-                        post.category.slice(1)
-                      : "General"}
-                  </Card.Subtitle>
-                  <Card.Text>{post.description}</Card.Text>
-                  <div className="d-flex align-items-center">
-                    <Button
-                      variant="outline-primary"
-                      onClick={handleLike}
-                      disabled={isLiking}
-                    >
-                      ❤️ Like {post.likes_count}
-                    </Button>
-
-                    {post?.is_owner && (
-                      <>
-                        <Button
-                          variant="outline-warning"
-                          className="ms-2"
-                          onClick={() => {
-                            setEditTitle(post.title);
-                            setEditContent(post.description);
-                            setEditImage(post.image);
-                            setShowEditModal(true);
-                          }}
-                        >
-                          ✏️ Edit
-                        </Button>
-                        <Button
-                          variant="outline-danger"
-                          className="ms-2"
-                          onClick={handleDeletePost}
-                        >
-                          🗑 Delete
-                        </Button>
-                      </>
-                    )}
-                  </div>
-
-                  <hr />
-
-                  <h5>Comments</h5>
-
-                  {/* Comment textfield */}
-                  <Form onSubmit={handleCommentSubmit} className="mt-3">
-                    <Form.Group>
-                      <Form.Control
-                        type="text"
-                        placeholder="Write a comment..."
-                        value={newComment}
-                        onChange={(e) => setNewComment(e.target.value)}
-                      />
-                    </Form.Group>
-                    <Button type="submit" className="mt-2" variant="primary">
-                      Post Comment
-                    </Button>
-                  </Form>
-
-                  {/* Comment View */}
-                  {comments.length === 0 ? (
-                    <p className="mt-3">
-                      No comments yet. Be the first to comment!
+                  <div>
+                    <strong>{post.author}</strong>
+                    <p className="text-muted small">
+                      {formatDistanceToNow(new Date(post.created_at), {
+                        addSuffix: true,
+                      })}
                     </p>
-                  ) : (
-                    comments.map((comment) => (
-                      <Card
-                        key={comment.id}
-                        className={`mb-2 p-2 shadow-sm ${
-                          comment.is_owner ? "border-warning" : "border-light"
-                        }`}
+                  </div>
+                </div>
+                <Card.Title className="mt-3">{post.title}</Card.Title>
+                <Card.Text>{post.description}</Card.Text>
+
+                {/* Like & Actions */}
+                <div className="d-flex justify-content-between align-items-center mt-3">
+                  <Button
+                    variant="outline-primary"
+                    onClick={handleLike}
+                    disabled={isLiking}
+                  >
+                    ❤️ {post.likes_count}
+                  </Button>
+                  {post?.is_owner && (
+                    <div>
+                      <Button
+                        variant="outline-warning"
+                        className="me-2"
+                        onClick={() => {
+                          setEditTitle(post.title);
+                          setEditContent(post.description);
+                          setEditImage(post.image);
+                          setShowEditModal(true);
+                        }}
                       >
-                        <div className="d-flex align-items-center p-2">
-                          <img
-                            src={
-                              comment.author_image ||
-                              "https://res.cloudinary.com/daj7vkzdw/image/upload/v1737570810/default_profile_uehpos.jpg"
-                            }
-                            alt="Profile"
-                            className="rounded-circle me-2 border"
-                            width="40"
-                            height="40"
-                          />
-                          <div>
-                            <strong className="text-primary">
-                              {comment.author}
-                            </strong>
-                            <p className="text-muted small">
-                              {formatDistanceToNow(
-                                new Date(comment.created_at),
-                                {
-                                  addSuffix: true,
-                                }
-                              )}
-                            </p>
-                          </div>
-                        </div>
-                        <Card.Body className="p-3">
-                          {comment.content}
-                          {comment.is_owner && (
-                            <>
-                              <Button
-                                variant="outline-warning"
-                                className="ms-2"
-                                onClick={() => {
-                                  setEditCommentId(comment.id);
-                                  setEditCommentContent(comment.content);
-                                  setShowCommentEditModal(true);
-                                }}
-                              >
-                                ✏️ Edit
-                              </Button>
-                              <Button
-                                variant="outline-danger"
-                                size="sm"
-                                className="ms-2"
-                                onClick={() => handleDeleteComment(comment.id)}
-                              >
-                                🗑 Delete
-                              </Button>
-                            </>
-                          )}
-                        </Card.Body>
-                      </Card>
-                    ))
+                        ✏️ Edit
+                      </Button>
+                      <Button
+                        variant="outline-danger"
+                        onClick={handleDeletePost}
+                      >
+                        🗑 Delete
+                      </Button>
+                    </div>
                   )}
-                </Card.Body>
-              </Card>
-            </Col>
-          </Row>
-        </Container>
+                </div>
+              </Card.Body>
+            </Card>
+          </Col>
+
+          {/* 👉 Mobile comments under posts */}
+          <Col xs={12} className="d-lg-none">
+            <Card className="shadow-sm p-3">
+              <Card.Title>💬 Comments</Card.Title>
+
+              <Form onSubmit={handleCommentSubmit} className="mt-3">
+                <Form.Group>
+                  <Form.Control
+                    type="text"
+                    placeholder="Write a comment..."
+                    value={newComment}
+                    onChange={(e) => setNewComment(e.target.value)}
+                  />
+                </Form.Group>
+                <Button type="submit" className="mt-2 w-100" variant="primary">
+                  Post Comment
+                </Button>
+              </Form>
+
+              {comments.length === 0 ? (
+                <p className="mt-3 text-muted">
+                  No comments yet. Be the first to comment!
+                </p>
+              ) : (
+                <>
+                  {comments.slice(0, visibleComments).map((comment) => (
+                    <Card key={comment.id} className="mt-2 p-2 shadow-sm">
+                      <div className="d-flex align-items-center p-2">
+                        <img
+                          src={
+                            comment.author_image ||
+                            "https://res.cloudinary.com/daj7vkzdw/image/upload/v1737570810/default_profile_uehpos.jpg"
+                          }
+                          alt="Profile"
+                          className="rounded-circle border me-2"
+                          width="40"
+                          height="40"
+                        />
+                        <div className="flex-grow-1">
+                          <strong className="text-primary">
+                            {comment.author}
+                          </strong>
+                          <p className="text-muted small">
+                            {formatDistanceToNow(new Date(comment.created_at), {
+                              addSuffix: true,
+                            })}
+                          </p>
+                          <p className="mb-1">{comment.content}</p>
+                        </div>
+                      </div>
+                    </Card>
+                  ))}
+
+                  {/* "More..." Button if there are more than 5 comments */}
+                  {comments.length > visibleComments && (
+                    <Button
+                      variant="link"
+                      className="mt-2 w-100"
+                      onClick={() => setVisibleComments(visibleComments + 5)}
+                    >
+                      More...
+                    </Button>
+                  )}
+                </>
+              )}
+            </Card>
+          </Col>
+
+          {/* 👉 Desktop Kommentare in Sidebar */}
+          <Col lg={3} className="d-none d-lg-block">
+            <Card className="shadow-sm p-3">
+              <Card.Title>💬 Comments</Card.Title>
+
+              <Form onSubmit={handleCommentSubmit} className="mt-3">
+                <Form.Group>
+                  <Form.Control
+                    type="text"
+                    placeholder="Write a comment..."
+                    value={newComment}
+                    onChange={(e) => setNewComment(e.target.value)}
+                  />
+                </Form.Group>
+                <Button type="submit" className="mt-2 w-100" variant="primary">
+                  Post Comment
+                </Button>
+              </Form>
+
+              {comments.length === 0 ? (
+                <p className="mt-3 text-muted">
+                  No comments yet. Be the first to comment!
+                </p>
+              ) : (
+                <>
+                  {comments.slice(0, visibleComments).map((comment) => (
+                    <Card key={comment.id} className="mt-2 p-2 shadow-sm">
+                      <div className="d-flex align-items-center p-2">
+                        <img
+                          src={
+                            comment.author_image ||
+                            "https://res.cloudinary.com/daj7vkzdw/image/upload/v1737570810/default_profile_uehpos.jpg"
+                          }
+                          alt="Profile"
+                          className="rounded-circle border me-2"
+                          width="40"
+                          height="40"
+                        />
+                        <div className="flex-grow-1">
+                          <strong className="text-primary">
+                            {comment.author}
+                          </strong>
+                          <p className="text-muted small">
+                            {formatDistanceToNow(new Date(comment.created_at), {
+                              addSuffix: true,
+                            })}
+                          </p>
+                          <p className="mb-1">{comment.content}</p>
+                        </div>
+                      </div>
+                    </Card>
+                  ))}
+
+                  {/* "More..." Button falls es mehr als 5 Kommentare gibt */}
+                  {comments.length > visibleComments && (
+                    <Button
+                      variant="link"
+                      className="mt-2 w-100"
+                      onClick={() => setVisibleComments(visibleComments + 5)}
+                    >
+                      More...
+                    </Button>
+                  )}
+                </>
+              )}
+            </Card>
+          </Col>
+        </Row>
       )}
 
       {/* Edit Post Modal */}
@@ -422,33 +502,13 @@ const PostDetail = () => {
                   onChange={(e) => setEditContent(e.target.value)}
                 />
               </Form.Group>
-              <Form.Group className="mb-3">
-                <Form.Label>Upload New Image</Form.Label>
-                <Form.Control
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => setEditImage(e.target.files[0])}
-                />
-                {editImage && (
-                  <img
-                    src={
-                      typeof editImage === "string"
-                        ? editImage
-                        : URL.createObjectURL(editImage)
-                    }
-                    alt="Current"
-                    className="mt-2 img-fluid"
-                    style={{ maxHeight: "200px", borderRadius: "8px" }}
-                  />
-                )}
-              </Form.Group>
             </Form>
           </Modal.Body>
           <Modal.Footer>
             <Button variant="secondary" onClick={() => setShowEditModal(false)}>
               Cancel
             </Button>
-            <Button variant="primary" onClick={handleEditPost} disabled={false}>
+            <Button variant="primary" onClick={handleEditPost}>
               Save Changes
             </Button>
           </Modal.Footer>
@@ -478,16 +538,12 @@ const PostDetail = () => {
           >
             Cancel
           </Button>
-          <Button
-            variant="primary"
-            onClick={handleSaveEditComment}
-            disabled={!editCommentContent.trim()}
-          >
+          <Button variant="primary" onClick={handleSaveEditComment}>
             Save Changes
           </Button>
         </Modal.Footer>
       </Modal>
-    </div>
+    </Container>
   );
 };
 

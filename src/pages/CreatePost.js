@@ -12,6 +12,12 @@ const CreatePost = () => {
   const [error, setError] = useState(null);
   const navigate = useNavigate();
 
+  const categoryMap = {
+    "sitting offer": "offer",
+    "sitting request": "search",
+    "general": "general",
+  };
+
   useEffect(() => {
     console.log("🚀 STATE CHANGE DETECTED: uploading =", uploading);
   }, [uploading]);
@@ -40,7 +46,7 @@ const CreatePost = () => {
       console.log("🟡 Test Point 2: Reached axiosReq.post!");
       const formData = new FormData();
       formData.append("title", title);
-      formData.append("category", category);
+      formData.append("category", categoryMap[category] || "general");
       formData.append("description", description);
       if (image) {
         formData.append("image", image);
@@ -54,7 +60,7 @@ const CreatePost = () => {
 
       console.log("✅ Post succesfully created:", response.data);
 
-      window.location.reload();
+      navigate(`/posts/${response.data.id}`);
     } catch (err) {
       console.error(
         "❌ Error in handleSubmit:",

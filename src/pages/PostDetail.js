@@ -3,16 +3,15 @@ import { useParams, useNavigate } from "react-router-dom";
 import {
   Card,
   Button,
-  Dropdown,
   Spinner,
   Alert,
   Form,
   Modal,
   Container,
   Row,
-  Badge,
   Col,
 } from "react-bootstrap";
+import { Badge as BsBadge, Dropdown as BsDropdown } from "react-bootstrap";
 import { axiosReq } from "../api/axios";
 import { formatDistanceToNow } from "date-fns";
 
@@ -29,8 +28,11 @@ const PostDetail = () => {
   const [isLiking, setIsLiking] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showCommentEditModal, setShowCommentEditModal] = useState(false);
-  const [editContent, setEditContent] = useState("");
   const [editTitle, setEditTitle] = useState("");
+  const [editContent, setEditContent] = useState("");
+  const [editCategory, setEditCategory] = useState(
+    () => post?.category || "general"
+  );
   const [editImage, setEditImage] = useState(null);
   const [expanded, setExpanded] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
@@ -38,13 +40,6 @@ const PostDetail = () => {
   const [isSubmitVisible, setIsSubmitVisible] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
   const commentInputRef = useRef(null);
-  const [editCategory, setEditCategory] = useState("general");
-
-  useEffect(() => {
-    if (post && post.category) {
-      setEditCategory(post.category);
-    }
-  }, [post]);
 
   // Button functionality
   useEffect(() => {
@@ -62,6 +57,7 @@ const PostDetail = () => {
       setLoading(true);
       try {
         const response = await axiosReq.get(`posts/${postId}/`);
+        console.log("📌 API Response Data:", response.data);
         setPost(response.data);
       } catch (err) {
         console.error(
@@ -75,6 +71,27 @@ const PostDetail = () => {
 
     fetchData();
   }, [postId]);
+
+  useEffect(() => {
+    if (post) {
+      setEditTitle(post.title || "");
+      setEditContent(post.description || "");
+      setEditCategory(post.category || "general");
+      setEditImage(post.image || null);
+    }
+  }, [post]);
+
+  const categoryColors = {
+    "sitting offer": "success",
+    "sitting request": "warning",
+    general: "primary",
+  };
+
+  const categoryMap = {
+    offer: "offer",
+    search: "search",
+    general: "general",
+  };
 
   // Fetch Comments
   useEffect(() => {
@@ -94,17 +111,14 @@ const PostDetail = () => {
   }, [postId]);
 
   // Debugging Logs
-  console.log("📌 Check Post Data before rendering:", post);
-  console.log("📌 Check Modals state:", {
-    showEditModal,
-    showCommentEditModal,
+  console.log("📌 Post Data:", post);
+  console.log("📌 Edit Modal State:", showEditModal);
+  console.log("📌 Edit Modal Values:", {
+    editTitle,
+    editContent,
+    editCategory,
+    editImage,
   });
-
-  const categoryColors = {
-    "sitting offer": "success",
-    "sitting request": "warning",
-    general: "primary",
-  };
 
   //  Error handling: If `post === null`
   if (loading) {
@@ -168,22 +182,41 @@ const PostDetail = () => {
       editContent,
     });
 
+    const formattedCategory = categoryMap[editCategory] || editCategory || "general";
+    console.log("🔍 categoryMap check:", editCategory, "->", formattedCategory);
+
     try {
       const formData = new FormData();
       formData.append("title", editTitle);
-      formData.append("category", editCategory);
+      formData.append("category", formattedCategory);
       formData.append("description", editContent);
 
       if (editImage instanceof File) {
         formData.append("image", editImage);
       }
+      console.log(
+        "🔍 categoryMap check:",
+        editCategory,
+        "->",
+        categoryMap[editCategory]
+      );
+      console.log(
+        "📤 Sending this FormData:",
+        Object.fromEntries(formData.entries())
+      );
 
       const response = await axiosReq.put(`posts/${postId}/`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
       console.log("✅ Post successfully updated:", response.data);
-      setPost(response.data);
+      setPost((prevPost) => ({
+        ...prevPost,
+        title: response.data.title,
+        category: response.data.category,
+        description: response.data.description,
+        image: response.data.image,
+      }));
       setShowEditModal(false);
     } catch (err) {
       console.error(
@@ -315,39 +348,44 @@ const PostDetail = () => {
 
                 {/* 🌟 3 Point Menu */}
                 {post?.is_owner && (
-                  <Dropdown
+                  <BsDropdown
                     show={showDropdown}
                     onToggle={setShowDropdown}
                     className="post-options"
                   >
-                    <Dropdown.Toggle
+                    <BsDropdown.Toggle
                       as="button"
                       className="post-options-btn"
                       onClick={toggleDropdown}
                     >
                       ⋮
-                    </Dropdown.Toggle>
-                    <Dropdown.Menu align="end">
-                      <Dropdown.Item
+                    </BsDropdown.Toggle>
+                    <BsDropdown.Menu align="end">
+                      <BsDropdown.Item
                         onClick={() => {
-                          setEditTitle(post.title);
-                          setEditContent(post.description);
-                          setEditImage(post.image);
+                          if (!post) return;
+                          setEditTitle(post.title || "");
+                          setEditContent(post.description || "");
+                          setEditImage(post.image || null);
                           setEditCategory(post.category || "general");
                           setShowEditModal(true);
+                          console.log(
+                            "📌 Setting editCategory before modal open:",
+                            post?.category
+                          );
                           setShowDropdown(false);
                         }}
                       >
                         ✏️ Edit
-                      </Dropdown.Item>
-                      <Dropdown.Item
+                      </BsDropdown.Item>
+                      <BsDropdown.Item
                         onClick={handleDeletePost}
                         className="text-danger"
                       >
                         🗑 Delete
-                      </Dropdown.Item>
-                    </Dropdown.Menu>
-                  </Dropdown>
+                      </BsDropdown.Item>
+                    </BsDropdown.Menu>
+                  </BsDropdown>
                 )}
               </div>
 
@@ -390,12 +428,16 @@ const PostDetail = () => {
 
               <Card.Body>
                 <Card.Title className="mt-3">{post.title}</Card.Title>
-                <Badge
+                <BsBadge
                   bg={categoryColors[post.category] || "secondary"}
                   className="mb-2"
                 >
                   {post.category || "General"}
-                </Badge>
+                </BsBadge>
+                <Card.Text>
+                  <strong>Category: </strong>
+                  {post.category}
+                </Card.Text>
                 <Card.Text>{post.description}</Card.Text>
               </Card.Body>
             </Card>
@@ -562,15 +604,15 @@ const PostDetail = () => {
                 />
               </Form.Group>
               <Form.Group className="mb-3">
-                <Form.Label>Category</Form.Label>
-                <Form.Select
-                  value={editCategory}
+                <label>Category</label>
+                <select
+                  value={editCategory || "general"}
                   onChange={(e) => setEditCategory(e.target.value)}
                 >
-                  <option value="sitting offer">Sitting Offer</option>
-                  <option value="sitting request">Sitting Request</option>
+                  <option value="offer">Sitting Offer</option>
+                  <option value="search">Sitting Request</option>
                   <option value="general">General</option>
-                </Form.Select>
+                </select>
               </Form.Group>
               <Form.Group className="mb-3">
                 <Form.Label>Description</Form.Label>

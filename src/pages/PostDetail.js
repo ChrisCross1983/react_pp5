@@ -182,7 +182,8 @@ const PostDetail = () => {
       editContent,
     });
 
-    const formattedCategory = categoryMap[editCategory] || editCategory || "general";
+    const formattedCategory =
+      categoryMap[editCategory] || editCategory || "general";
     console.log("🔍 categoryMap check:", editCategory, "->", formattedCategory);
 
     try {
@@ -242,6 +243,7 @@ const PostDetail = () => {
 
   const handleCommentSubmit = async (e) => {
     e.preventDefault();
+
     if (!newComment.trim()) return;
 
     try {
@@ -252,6 +254,7 @@ const PostDetail = () => {
       );
 
       console.log("✅ New comment saved succesfully:", response.data);
+
       setComments((prevComments) => [response.data, ...prevComments]);
       setNewComment("");
     } catch (err) {
@@ -307,6 +310,11 @@ const PostDetail = () => {
 
   const toggleDropdown = () => setShowDropdown(!showDropdown);
 
+  const handleTextareaResize = (event) => {
+    event.target.style.height = "auto";
+    event.target.style.height = `${event.target.scrollHeight}px`;
+  };
+
   return (
     <Container className="mt-4">
       {loading && <Spinner animation="border" variant="primary" />}
@@ -346,7 +354,7 @@ const PostDetail = () => {
                   </div>
                 </div>
 
-                {/* 🌟 3 Point Menu */}
+                {/* 3 Point Menu Posts*/}
                 {post?.is_owner && (
                   <BsDropdown
                     show={showDropdown}
@@ -447,130 +455,148 @@ const PostDetail = () => {
               <Col xs={12}>
                 <Card className="shadow-sm p-3">
                   <Card.Title>💬 Comments</Card.Title>
-
-                  <Form
-                    onSubmit={(e) => {
-                      e.preventDefault();
-                      if (!newComment.trim()) return;
-
-                      axiosReq
-                        .post(`posts/${postId}/comment/`, {
-                          content: newComment,
-                          post: postId,
-                        })
-                        .then((response) => {
-                          console.log(
-                            "✅ New comment saved successfully:",
-                            response.data
-                          );
-                          setComments((prevComments) => [
-                            response.data,
-                            ...prevComments,
-                          ]);
-                          setNewComment("");
-                        })
-                        .catch((err) => {
-                          console.error(
-                            "❌ Error while saving comment:",
-                            err.response?.data || err.message
-                          );
-                        });
-                    }}
-                    className="mt-3 position-relative"
-                  >
-                    <Form.Group className="position-relative">
-                      <Form.Control
-                        id="comment-input"
-                        type="text"
-                        placeholder="Write a comment..."
-                        value={newComment}
-                        onChange={(e) => setNewComment(e.target.value)}
-                        ref={commentInputRef}
-                      />
-                      {/* Dynamic Send Button */}
-                      {newComment.trim().length > 0 && (
-                        <Button type="submit" className="comment-submit-btn">
-                          ➤
-                        </Button>
-                      )}
-                    </Form.Group>
-                  </Form>
-
-                  {comments.length === 0 ? (
-                    <p className="mt-3 text-muted">
+                  {/* If there are no comments */}
+                  {comments.length === 0 && (
+                    <p className="mt-3 text-muted text center">
                       No comments yet. Be the first to comment!
                     </p>
-                  ) : (
-                    <>
-                      {comments.slice(0, visibleComments).map((comment) => (
-                        <Card key={comment.id} className="mt-2 p-2 shadow-sm">
-                          <div className="comment-header">
-                            <img
-                              src={
-                                comment.author_image ||
-                                "https://res.cloudinary.com/daj7vkzdw/image/upload/v1737570810/default_profile_uehpos.jpg"
-                              }
-                              alt="Profile"
-                              className="comment-avatar"
-                            />
-                            <div className="comment-meta">
-                              <strong className="text-primary">
-                                {comment.author}
-                              </strong>
-                              <p className="text-muted small">
-                                {formatDistanceToNow(
-                                  new Date(comment.created_at),
-                                  { addSuffix: true }
-                                )}
-                              </p>
-                            </div>
-                          </div>
-                          <p className="mb-1">{comment.content}</p>
-                          {isSubmitVisible && (
-                            <Button
-                              type="submit"
-                              className="comment-submit-btn"
-                            >
-                              ➤
-                            </Button>
-                          )}
+                  )}
+                  {/* Comment input field with Send Button */}
+                  <Form
+                    className="comment-input"
+                    onSubmit={handleCommentSubmit}
+                  >
+                    <Form.Control
+                      as="textarea"
+                      rows={1}
+                      placeholder="Write a comment..."
+                      value={newComment}
+                      onChange={(e) => {
+                        setNewComment(e.target.value);
+                        setIsSubmitVisible(e.target.value.trim().length > 0);
+                      }}
+                      onInput={handleTextareaResize}
+                      style={{
+                        resize: "none",
+                        overflowY: "hidden",
+                        minHeight: "40px",
+                      }}
+                    />
+                    {isSubmitVisible && (
+                      <Button
+                        type="submit"
+                        variant="primary"
+                        className="comment-submit-btn"
+                        style={{
+                          opacity: 1,
+                          transition: "opacity 0.3s ease-in-out",
+                        }}
+                      >
+                        ➤
+                      </Button>
+                    )}
+                  </Form>
 
-                          {/* 🛠 Edit & Delete Comments */}
-                          {comment.is_owner && (
-                            <div className="d-flex justify-content-end">
-                              <Button
-                                variant="outline-warning"
-                                size="sm"
-                                className="me-2"
-                                onClick={() => handleEditComment(comment)}
-                              >
-                                ✏️ Edit
-                              </Button>
-                              <Button
-                                variant="outline-danger"
-                                size="sm"
-                                onClick={() => handleDeleteComment(comment.id)}
-                              >
-                                🗑 Delete
-                              </Button>
-                            </div>
-                          )}
-                        </Card>
-                      ))}
-
-                      {/* "More..." Button */}
-                      {comments.length > visibleComments && (
-                        <Button
-                          variant="link"
-                          className="mt-2 w-100"
-                          onClick={() =>
-                            setVisibleComments(visibleComments + 5)
+                  {/* Comments List */}
+                  {comments.slice(0, visibleComments).map((comment) => (
+                    <div
+                      key={comment.id}
+                      className={`comment ${
+                        comment.is_owner ? "comment-own" : ""
+                      }`}
+                    >
+                      {/* Author Bar for comments */}
+                      <div
+                        className="comment-author-bar"
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "10px",
+                        }}
+                      >
+                        <img
+                          src={
+                            comment.author_image ||
+                            "https://res.cloudinary.com/daj7vkzdw/image/upload/v1737570810/default_profile_uehpos.jpg"
                           }
+                          alt="Profile"
+                          className="comment-avatar"
+                        />
+                        <div
+                          className="comment-author-info"
+                          style={{ display: "flex", flexDirection: "column" }}
                         >
-                          More...
-                        </Button>
+                          <div
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "5px",
+                            }}
+                          >
+                            <strong>{comment.author}</strong>
+                            <p
+                              className="text-muted small"
+                              style={{ margin: 0 }}
+                            >
+                              {formatDistanceToNow(
+                                new Date(comment.created_at),
+                                { addSuffix: true }
+                              )}
+                            </p>
+                          </div>
+                          <p
+                            className="comment-content"
+                            style={{ marginTop: "5px" }}
+                          >
+                            {comment.content}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* 3-Point-Menu for Edit / Delete realized comments */}
+                      {comment.is_owner && (
+                        <BsDropdown className="comment-options">
+                          <BsDropdown.Toggle
+                            as="button"
+                            className="comment-options-btn"
+                            style={{
+                              background: "none",
+                              border: "none",
+                              padding: "5px",
+                              cursor: "pointer",
+                            }}
+                          >
+                            ⋮
+                          </BsDropdown.Toggle>
+                          <BsDropdown.Menu
+                            align="end"
+                            style={{ borderRadius: "8px", minWidth: "120px" }}
+                          >
+                            <BsDropdown.Item
+                              onClick={() => handleEditComment(comment)}
+                            >
+                              ✏️ Edit
+                            </BsDropdown.Item>
+                            <BsDropdown.Item
+                              onClick={() => handleDeleteComment(comment.id)}
+                              className="text-danger"
+                            >
+                              🗑 Delete
+                            </BsDropdown.Item>
+                          </BsDropdown.Menu>
+                        </BsDropdown>
                       )}
-                    </>
+                    </div>
+                  ))}
+                  {/* "More..." Button */}
+                  {comments.length > visibleComments && (
+                    <Button
+                      variant="link"
+                      className="mt-2 w-100"
+                      onClick={() => setVisibleComments(visibleComments + 5)}
+                    >
+                      More...
+                    </Button>
                   )}
                 </Card>
               </Col>

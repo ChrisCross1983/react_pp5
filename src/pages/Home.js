@@ -1,8 +1,10 @@
 import React from "react";
-import { Container, Row, Col, Alert, Button } from "react-bootstrap";
+import { Container, Row, Col, Alert } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import Posts from "./Posts";
 import TopFollowedUsers from "../components/TopFollowedUsers";
+import Dashboard from "./Dashboard";
+import SittingRequests from "../components/SittingRequests";
 
 const Home = () => {
   const accessToken = localStorage.getItem("accessToken");
@@ -11,42 +13,37 @@ const Home = () => {
   return (
     <Container className="mt-5">
       <h2 className="text-center mb-4">Welcome to Lucky Cat</h2>
-      <p className="text-center">Your platform for cat-sitting requests and offers.</p>
+      <p className="text-center">
+        Your platform for cat-sitting requests and offers.
+      </p>
 
-      {!isLoggedIn ? (
-        <Alert variant="warning" className="text-center">
-          Please <Link to="/login">log in</Link> to view posts.
-        </Alert>
-      ) : (
+      {isLoggedIn ? (
         <>
-          {/* 🔹 Dashboard for logged in Users */}
-          <Row className="mb-4">
-            <Col className="text-center">
-              <h4>Dashboard</h4>
-              <p>Welcome back! Check out the latest posts and popular users.</p>
-              <Button as={Link} to="/profile" variant="info" className="me-2">
-                Go to Profile
-              </Button>
-              <Button as={Link} to="/create-post" variant="primary">
-                Create Post
-              </Button>
-            </Col>
-          </Row>
-
-          <Row>
-            {/* Post Feed */}
-            <Col md={8}>
-              <h4>Latest Posts</h4>
-              <Posts /> {/* ✅ Component for Posts */}
-            </Col>
-
-            {/* Sidebar with Top-Followed-Users */}
-            <Col md={4}>
-              <h4>Top Followed Users</h4>
+          {/* Dashboard-Area */}
+          <Dashboard />
+          <Row className="mt-4">
+            {/* Left Sidebar - Top Followed Users */}
+            <Col lg={3} md={4} className="d-none d-md-block">
+              <h5 className="mb-3">Top Followed Users</h5>
               <TopFollowedUsers />
+            </Col>
+
+            {/* Main Area - Posts */}
+            <Col lg={6} md={8}>
+              <Posts />
+            </Col>
+
+            {/* Right Sidebar - Sitting Requests */}
+            <Col lg={3} md={4} className="d-none d-md-block">
+              <h5 className="mb-3">Sitting Requests</h5>
+              <SittingRequests />
             </Col>
           </Row>
         </>
+      ) : (
+        <Alert variant="warning" className="text-center">
+          Please <Link to="/login">log in</Link> to view posts.
+        </Alert>
       )}
     </Container>
   );

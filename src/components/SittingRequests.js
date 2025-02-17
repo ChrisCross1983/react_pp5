@@ -55,7 +55,6 @@ export default function SittingRequests() {
 
   return (
     <div className="p-4">
-      <h2 className="text-xl font-bold mb-4">Sitting Requests</h2>
       <Tabs defaultActiveKey="received" id="sitting-requests-tabs">
         
         <Tab eventKey="received" title="Received Requests">

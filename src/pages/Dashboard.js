@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { Container, Row, Col } from "react-bootstrap";
+import { useNavigate } from "react-router-dom";
+import { Container, Row, Col, Button } from "react-bootstrap";
 import Posts from "./Posts";
 import TopFollowedUsers from "../components/TopFollowedUsers";
 import SittingRequests from "../components/SittingRequests";
@@ -9,10 +10,27 @@ const Dashboard = () => {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const navigate = useNavigate();
   const [currentUser, setCurrentUser] = useState(
     localStorage.getItem("username")?.toLowerCase()
   );
+  const [showScrollTop, setShowScrollTop] = useState(false);
 
+  // Scroll-to-Top
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowScrollTop(window.scrollY > 300);
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  // Fetching Posts
   useEffect(() => {
     if (!currentUser) {
       console.warn("⏳ Waiting for currentUser to be set...");
@@ -38,13 +56,11 @@ const Dashboard = () => {
 
               return {
                 ...post,
-                is_owner:
-                  post.author.toLowerCase() === currentUser,
+                is_owner: post.author.toLowerCase() === currentUser,
                 comments_count: commentResponse.data.count,
                 comments: commentResponse.data.results.map((comment) => ({
                   ...comment,
-                  is_owner:
-                    comment.author.toLowerCase() === currentUser,
+                  is_owner: comment.author.toLowerCase() === currentUser,
                 })),
               };
             } catch (err) {
@@ -72,6 +88,14 @@ const Dashboard = () => {
 
   return (
     <Container fluid className="mt-4">
+      <Row className="mb-3">
+        <Col className="text-center">
+          <Button variant="success" onClick={() => navigate("/create-post")}>
+            📝 Create New Post
+          </Button>
+        </Col>
+      </Row>
+
       <Row>
         {/* Left Sidebar - Top Followed Users */}
         <Col md={3} className="d-none d-md-block">
@@ -95,6 +119,25 @@ const Dashboard = () => {
           <SittingRequests />
         </Col>
       </Row>
+
+      {/* Scroll-to-Top Button */}
+      {showScrollTop && (
+        <Button
+          variant="dark"
+          onClick={scrollToTop}
+          style={{
+            position: "fixed",
+            bottom: "20px",
+            right: "20px",
+            borderRadius: "50%",
+            padding: "10px 15px",
+            fontSize: "20px",
+            boxShadow: "0px 4px 6px rgba(0, 0, 0, 0.1)",
+          }}
+        >
+          ⬆️
+        </Button>
+      )}
     </Container>
   );
 };

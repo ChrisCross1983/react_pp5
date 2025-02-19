@@ -1,108 +1,139 @@
-import React, { useState, useEffect } from "react";
-import { Form, Button, Container, Alert, Spinner } from "react-bootstrap";
+import React, { useState } from "react";
+import { Container, Form, Button, Alert } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 import { axiosReq } from "../api/axios";
 
 const CreatePost = () => {
   const [title, setTitle] = useState("");
-  const [category, setCategory] = useState("general");
   const [description, setDescription] = useState("");
+  const [category, setCategory] = useState("general");
   const [image, setImage] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
 
   const categoryMap = {
-    "sitting offer": "offer",
-    "sitting request": "search",
-    "general": "general",
+    offer: "offer",
+    search: "search",
+    general: "general",
   };
 
-  useEffect(() => {
-    console.log("🚀 STATE CHANGE DETECTED: uploading =", uploading);
-  }, [uploading]);
+  const handleImageChange = (e) => {
+    setImage(e.target.files[0]);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("🟢 handleSubmit was called!");
-    setUploading(true);
 
-    setTimeout(() => {
-      console.log("🔄 CHECK: Uploading should be true ->", uploading);
-    }, 500);
-
-    setError(null);
-
+    if (!title.trim()) {
+      console.error("❌ ERROR: Title must not be empty!");
+      setError("Title must not be empty!");
+      return;
+    }
+  
     if (!description.trim()) {
-      setError("❌ Description shouldnt be empty!");
-      setUploading(false);
+      setError("Description must not be empty!");
       return;
     }
 
-    console.log("📤 handleSubmit started!");
-    console.log("✅ Test point 1: Code reaches try block!");
-
     try {
-      console.log("🟡 Test Point 2: Reached axiosReq.post!");
+      setUploading(true);
       const formData = new FormData();
       formData.append("title", title);
-      formData.append("category", categoryMap[category] || "general");
       formData.append("description", description);
+      formData.append("category", categoryMap[category] || "general");
+
       if (image) {
         formData.append("image", image);
       }
 
-      console.log("📤 Sende FormData:", Object.fromEntries(formData.entries()));
-
       const response = await axiosReq.post("posts/", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
+        headers: {
+          "Content-Type": "multipart/form-data",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
       });
 
-      console.log("✅ Post succesfully created:", response.data);
-
-      navigate(`/posts/${response.data.id}`);
+      navigate("/dashboard");
     } catch (err) {
       console.error(
-        "❌ Error in handleSubmit:",
+        "❌ ERROR: Post cannot be created!",
         err.response?.data || err.message
       );
-      console.log("🔎 Error details:", err.response);
-      setError(err.response?.data || "Error while creating post.");
+      setError("Post cannot be created. Please check your input");
     } finally {
-      console.log("🔄 Set uploading to false! (Check if this runs)");
       setUploading(false);
     }
   };
 
   return (
-    <Container className="mt-4">
-      <h2>✅ CreatePost mit useState</h2>
+    <Container>
+      <h2>📝 Create Post</h2>
       {error && <Alert variant="danger">{error}</Alert>}
+
       <Form onSubmit={handleSubmit}>
+        {/* Title */}
+        {console.log("📌 Rendering Form Title Input...")}
         <Form.Group className="mb-3">
           <Form.Label>Title</Form.Label>
           <Form.Control
             type="text"
-            placeholder="Enter a title"
+            placeholder="Enter post title..."
             value={title}
             onChange={(e) => setTitle(e.target.value)}
           />
         </Form.Group>
+
+        {/* Description */}
+        {console.log("📌 Rendering Form Description Input...")}
         <Form.Group className="mb-3">
           <Form.Label>Description</Form.Label>
           <Form.Control
-            type="text"
-            placeholder="Enter description"
+            as="textarea"
+            rows={3}
+            placeholder="Write something about your post..."
             value={description}
             onChange={(e) => setDescription(e.target.value)}
           />
         </Form.Group>
-        <Button type="submit" disabled={uploading}>
-          {uploading ? <Spinner animation="border" size="sm" /> : "Submit"}
+
+        {/* Category Dropdown */}
+        {console.log("📌 Debug: Rendering Category Select Component", category)}
+        <Form.Group className="mb-3">
+          <Form.Label>Category</Form.Label>
+          {console.log("📌 Debug: Prüfe Form.Select", Form.Select)}
+          <Form.Control
+            as="select"
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+          >
+            <option value="offer">Sitting Offer</option>
+            <option value="search">Sitting Request</option>
+            <option value="general">General</option>
+          </Form.Control>
+        </Form.Group>
+
+        {/* Image Upload */}
+        {console.log("📌 Rendering Form Image Upload...")}
+        <Form.Group className="mb-3">
+          <Form.Label>Upload Image</Form.Label>
+          <Form.Control
+            type="file"
+            accept="image/*"
+            onChange={handleImageChange}
+          />
+        </Form.Group>
+
+        {/* Submit Button */}
+        {console.log("📌 Rendering Form Submit Button...")}
+        <Button type="submit" variant="primary" disabled={uploading}>
+          {uploading ? "Uploading..." : "Create Post"}
         </Button>
       </Form>
     </Container>
   );
 };
+
+console.log("🟢 Prüfe alle Properties von Form:", Object.keys(Form));
 
 export default CreatePost;

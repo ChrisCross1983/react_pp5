@@ -13,7 +13,7 @@ const Navigation = () => {
   const fetchNotifications = useCallback(async () => {
     try {
       const response = await axiosReq.get("notifications/");
-      
+
       if (response.data && Array.isArray(response.data.results)) {
         setNotifications(response.data.results);
         setUnreadCount(response.data.results.filter((n) => n && !n.is_read).length);
@@ -31,6 +31,7 @@ const Navigation = () => {
 
   const handleLogout = async () => {
     await logout();
+    localStorage.removeItem("username");
     navigate("/login");
   };
 
@@ -43,6 +44,11 @@ const Navigation = () => {
       axiosReq.get("profiles/auth/user/")
         .then(response => {
           console.log("✅ User Data Loaded:", response.data);
+
+          if (response.data.username) {
+            localStorage.setItem("username", response.data.username.toLowerCase());
+          }
+
           fetchNotifications();
         })
         .catch(error => {

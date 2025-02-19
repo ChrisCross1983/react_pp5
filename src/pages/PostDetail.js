@@ -34,7 +34,6 @@ const PostDetail = () => {
     () => post?.category || "general"
   );
   const [editImage, setEditImage] = useState(null);
-  const [expanded, setExpanded] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
   const [visibleComments, setVisibleComments] = useState(5);
   const [isSubmitVisible, setIsSubmitVisible] = useState(false);
@@ -243,7 +242,6 @@ const PostDetail = () => {
 
   const handleCommentSubmit = async (e) => {
     e.preventDefault();
-
     if (!newComment.trim()) return;
 
     try {
@@ -257,6 +255,7 @@ const PostDetail = () => {
 
       setComments((prevComments) => [response.data, ...prevComments]);
       setNewComment("");
+      setIsSubmitVisible(false);
     } catch (err) {
       console.error(
         "❌ Error while saving comment:",
@@ -500,92 +499,62 @@ const PostDetail = () => {
                   {/* Comments List */}
                   {comments.slice(0, visibleComments).map((comment) => (
                     <div
-                      key={comment.id}
                       className={`comment ${
                         comment.is_owner ? "comment-own" : ""
                       }`}
+                      key={comment.id}
                     >
                       {/* Author Bar for comments */}
-                      <div
-                        className="comment-author-bar"
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "10px",
-                        }}
-                      >
-                        <img
-                          src={
-                            comment.author_image ||
-                            "https://res.cloudinary.com/daj7vkzdw/image/upload/v1737570810/default_profile_uehpos.jpg"
-                          }
-                          alt="Profile"
-                          className="comment-avatar"
-                        />
-                        <div
-                          className="comment-author-info"
-                          style={{ display: "flex", flexDirection: "column" }}
-                        >
-                          <div
-                            style={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: "5px",
-                            }}
-                          >
+                      <div className="comment-header">
+                        <div className="comment-info">
+                          <img
+                            src={
+                              comment.author_image ||
+                              "https://res.cloudinary.com/daj7vkzdw/image/upload/v1737570810/default_profile_uehpos.jpg"
+                            }
+                            alt="Profile"
+                            className="comment-avatar"
+                          />
+                          <div className="comment-meta">
                             <strong>{comment.author}</strong>
-                            <p
-                              className="text-muted small"
-                              style={{ margin: 0 }}
-                            >
+                            <p className="text-muted small">
                               {formatDistanceToNow(
                                 new Date(comment.created_at),
                                 { addSuffix: true }
                               )}
                             </p>
                           </div>
-                          <p
-                            className="comment-content"
-                            style={{ marginTop: "5px" }}
-                          >
-                            {comment.content}
-                          </p>
                         </div>
-                      </div>
 
-                      {/* 3-Point-Menu for Edit / Delete realized comments */}
-                      {comment.is_owner && (
-                        <BsDropdown className="comment-options">
-                          <BsDropdown.Toggle
-                            as="button"
-                            className="comment-options-btn"
-                            style={{
-                              background: "none",
-                              border: "none",
-                              padding: "5px",
-                              cursor: "pointer",
-                            }}
-                          >
-                            ⋮
-                          </BsDropdown.Toggle>
-                          <BsDropdown.Menu
-                            align="end"
-                            style={{ borderRadius: "8px", minWidth: "120px" }}
-                          >
-                            <BsDropdown.Item
-                              onClick={() => handleEditComment(comment)}
+                        {/* 3 Point Menu Bar for Edit / Delete comments */}
+                        {comment.is_owner && (
+                          <BsDropdown className="comment-options">
+                            <BsDropdown.Toggle
+                              as="button"
+                              className="comment-options-btn"
                             >
-                              ✏️ Edit
-                            </BsDropdown.Item>
-                            <BsDropdown.Item
-                              onClick={() => handleDeleteComment(comment.id)}
-                              className="text-danger"
-                            >
-                              🗑 Delete
-                            </BsDropdown.Item>
-                          </BsDropdown.Menu>
-                        </BsDropdown>
-                      )}
+                              ⋮
+                            </BsDropdown.Toggle>
+                            <BsDropdown.Menu align="end">
+                              <BsDropdown.Item
+                                onClick={() => handleEditComment(comment)}
+                              >
+                                ✏️ Edit
+                              </BsDropdown.Item>
+                              <BsDropdown.Item
+                                onClick={() => handleDeleteComment(comment.id)}
+                                className="text-danger"
+                              >
+                                🗑 Delete
+                              </BsDropdown.Item>
+                            </BsDropdown.Menu>
+                          </BsDropdown>
+                        )}
+                      </div>
+                      {/* Comment Content */}
+                      <div className="comment-body">
+                        <p className="comment-content">{comment.content}</p>
+                      </div>
                     </div>
                   ))}
                   {/* "More..." Button */}

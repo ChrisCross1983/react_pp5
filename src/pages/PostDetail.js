@@ -14,6 +14,7 @@ import {
 import { Badge as BsBadge, Dropdown as BsDropdown } from "react-bootstrap";
 import { axiosReq } from "../api/axios";
 import { formatDistanceToNow } from "date-fns";
+import { toast } from "react-toastify";
 
 const PostDetail = () => {
   const { id: postId } = useParams();
@@ -28,6 +29,8 @@ const PostDetail = () => {
   const [isLiking, setIsLiking] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showCommentEditModal, setShowCommentEditModal] = useState(false);
+  const [showDeleteCommentModal, setShowDeleteCommentModal] = useState(false);
+  const [commentToDeleteId, setCommentToDeleteId] = useState(null);
   const [editTitle, setEditTitle] = useState("");
   const [editContent, setEditContent] = useState("");
   const [editCategory, setEditCategory] = useState(
@@ -38,6 +41,8 @@ const PostDetail = () => {
   const [visibleComments, setVisibleComments] = useState(5);
   const [isSubmitVisible, setIsSubmitVisible] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isSavingComment, setIsSavingComment] = useState(false);
   const commentInputRef = useRef(null);
 
   // Button functionality
@@ -173,43 +178,20 @@ const PostDetail = () => {
   };
 
   const handleEditPost = async () => {
-    console.log("📤 Sending PUT request...");
-    console.log("📌 Updated Post Data:", {
-      editImage,
-      editTitle,
-      editCategory,
-      editContent,
-    });
-
-    const formattedCategory =
-      categoryMap[editCategory] || editCategory || "general";
-    console.log("🔍 categoryMap check:", editCategory, "->", formattedCategory);
-
+    setIsSaving(true);
     try {
       const formData = new FormData();
       formData.append("title", editTitle);
-      formData.append("category", formattedCategory);
+      formData.append("category", categoryMap[editCategory] || "general");
       formData.append("description", editContent);
-
       if (editImage instanceof File) {
         formData.append("image", editImage);
       }
-      console.log(
-        "🔍 categoryMap check:",
-        editCategory,
-        "->",
-        categoryMap[editCategory]
-      );
-      console.log(
-        "📤 Sending this FormData:",
-        Object.fromEntries(formData.entries())
-      );
-
+  
       const response = await axiosReq.put(`posts/${postId}/`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
-
-      console.log("✅ Post successfully updated:", response.data);
+  
       setPost((prevPost) => ({
         ...prevPost,
         title: response.data.title,
@@ -217,26 +199,28 @@ const PostDetail = () => {
         description: response.data.description,
         image: response.data.image,
       }));
+  
       setShowEditModal(false);
+  
+      toast.success("✅ Post updated successfully!");
     } catch (err) {
-      console.error(
-        "❌ Error editing post:",
-        err.response?.data || err.message
-      );
+      console.error("❌ Error editing post:", err.response?.data || err.message);
+      toast.error("❌ Failed to update post. Please try again.");
+    } finally {
+      setIsSaving(false);
     }
   };
 
   const handleDeletePost = async () => {
-    if (!window.confirm("Are you sure you want to delete this post?")) return;
-
     try {
       await axiosReq.delete(`posts/${postId}/`, {
         headers: { "X-CSRFToken": localStorage.getItem("csrfToken") },
       });
-      alert("Post deleted successfully.");
+      toast.success("✅ Post deleted successfully!");
       navigate("/");
     } catch (err) {
-      console.error("Error deleting post:", err);
+      toast.error("❌ Failed to delete post.");
+      console.error("❌ Error deleting post:", err);
     }
   };
 
@@ -271,24 +255,29 @@ const PostDetail = () => {
   };
 
   const handleSaveEditComment = async () => {
+    setIsSavingComment(true);
     try {
       const response = await axiosReq.put(
         `posts/comments/${editCommentId}/`,
         { content: editCommentContent, post: postId },
         { headers: { "X-CSRFToken": localStorage.getItem("csrfToken") } }
       );
-
+  
       setComments((prevComments) =>
         prevComments.map((c) =>
           c.id === editCommentId ? { ...c, content: response.data.content } : c
         )
       );
       setShowCommentEditModal(false);
+      toast.success("✅ Comment updated successfully!");
     } catch (err) {
       console.error(
         "❌ Error updating comment:",
         err.response?.data || err.message
       );
+      toast.error("❌ Failed to update comment.");
+    } finally {
+      setIsSavingComment(false);
     }
   };
 
@@ -301,7 +290,7 @@ const PostDetail = () => {
       setComments((prevComments) =>
         prevComments.filter((c) => c.id !== commentId)
       );
-      alert("Comment deleted successfully.");
+      toast.success("✅ Comment deleted successfully!");
     } catch (err) {
       console.error("Error deleting comment:", err);
     }
@@ -542,7 +531,10 @@ const PostDetail = () => {
                                 ✏️ Edit
                               </BsDropdown.Item>
                               <BsDropdown.Item
-                                onClick={() => handleDeleteComment(comment.id)}
+                                onClick={() => {
+                                  setCommentToDeleteId(comment.id);
+                                  setShowDeleteCommentModal(true);
+                                }}
                                 className="text-danger"
                               >
                                 🗑 Delete
@@ -624,8 +616,8 @@ const PostDetail = () => {
             <Button variant="secondary" onClick={() => setShowEditModal(false)}>
               Cancel
             </Button>
-            <Button variant="primary" onClick={handleEditPost}>
-              Save Changes
+            <Button variant="primary" onClick={handleEditPost} disabled={isSaving}>
+              {isSaving ? "Saving..." : "Save Changes"}
             </Button>
           </Modal.Footer>
         </Modal>
@@ -654,8 +646,49 @@ const PostDetail = () => {
           >
             Cancel
           </Button>
-          <Button variant="primary" onClick={handleSaveEditComment}>
-            Save Changes
+          <Button
+            variant="primary"
+            onClick={handleSaveEditComment}
+            disabled={isSavingComment}
+          >
+            {isSavingComment ? "Saving..." : "Save Changes"}
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      {/* Delete Comment Modal */}
+      <Modal
+        show={showDeleteCommentModal}
+        onHide={() => setShowDeleteCommentModal(false)}
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>Confirm Comment Deletion</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          Are you sure you want to delete this comment?
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowDeleteCommentModal(false)}>
+            Cancel
+          </Button>
+          <Button
+            variant="danger"
+            onClick={async () => {
+              try {
+                await axiosReq.delete(`posts/comments/${commentToDeleteId}/`);
+                setComments((prevComments) =>
+                  prevComments.filter((c) => c.id !== commentToDeleteId)
+                );
+                toast.success("✅ Comment deleted successfully!");
+              } catch (err) {
+                console.error("❌ Error deleting comment:", err);
+                toast.error("❌ Failed to delete comment.");
+              } finally {
+                setShowDeleteCommentModal(false);
+              }
+            }}
+          >
+            Delete
           </Button>
         </Modal.Footer>
       </Modal>

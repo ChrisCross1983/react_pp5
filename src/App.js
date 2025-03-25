@@ -12,6 +12,11 @@ import CreatePost from "./pages/CreatePost";
 import PostDetail from "./pages/PostDetail";
 import Profile from "./pages/Profile";
 import { AuthProvider, AuthContext } from "./context/AuthContext";
+
+// Toastify imports
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+
 import "./App.css";
 
 const AppRoutes = () => {
@@ -38,8 +43,22 @@ const App = () => {
   return (
     <AuthProvider>
       <Router>
-        <Navigation /> {/* ✅ Navbar */}
+        <Navigation />
         <AppRoutes />
+
+        {/* Global Toast Container */}
+        <ToastContainer
+          position="top-center"
+          autoClose={3000}
+          hideProgressBar={false}
+          newestOnTop
+          closeOnClick
+          rtl={false}
+          pauseOnFocusLoss
+          draggable
+          pauseOnHover
+          theme="colored"
+        />
       </Router>
     </AuthProvider>
   );

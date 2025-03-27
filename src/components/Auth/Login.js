@@ -42,6 +42,7 @@ const Login = () => {
     } catch (error) {
       setErrorMessage("Invalid username or password. Please try again.");
       console.error("❌ Login failed:", error.response?.data || error.message);
+      setIsSubmitting(false);
     }
   };
 

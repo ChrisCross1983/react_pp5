@@ -1,27 +1,34 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import { Container, Row, Col, Button } from "react-bootstrap";
-import Posts from "./Posts";
 import TopFollowedUsers from "../components/TopFollowedUsers";
 import SittingRequests from "../components/SittingRequests";
+import Posts from "./Posts";
 import { axiosReq } from "../api/axios";
+import { AuthContext } from "../context/AuthContext";
 
 const Dashboard = () => {
+  const { username } = useContext(AuthContext);
+  const navigate = useNavigate();
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const navigate = useNavigate();
-  const [currentUser, setCurrentUser] = useState(
-    localStorage.getItem("username")?.toLowerCase()
-  );
   const [showScrollTop, setShowScrollTop] = useState(false);
+  const [userReady, setUserReady] = useState(false);
 
-  // Scroll-to-Top
+  // Set User ready
+  useEffect(() => {
+    if (username) {
+      console.log("✅ userReady TRIGGERED:", username);
+      setUserReady(true);
+    }
+  }, [username]);
+
+  // Scroll-to-top visibility
   useEffect(() => {
     const handleScroll = () => {
       setShowScrollTop(window.scrollY > 300);
     };
-
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
@@ -30,42 +37,46 @@ const Dashboard = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  // Fetching Posts
+  // Post Fetching
   useEffect(() => {
-    if (!currentUser) {
-      console.warn("⏳ Waiting for currentUser to be set...");
+    if (!userReady) {
+      console.log("⏳ userReady is false, skip fetching posts.");
       return;
     }
-
-    console.log("🟢 useEffect in Dashboard.js TRIGGERED – Fetching Posts...");
+  
+    const currentUser = username.toLowerCase();
+    console.log("🟢 Fetching posts for:", currentUser);
+  
     const fetchPosts = async () => {
       setLoading(true);
       try {
-        console.log("🔄 Fetching latest posts...");
-        const response = await axiosReq.get("posts/feed/");
-        let fetchedPosts = response.data?.results ?? response.data;
+        console.log("📤 Sending request to /posts/feed/ with token:", localStorage.getItem("accessToken"));
+        axiosReq.defaults.headers.common["Authorization"] = `Bearer ${localStorage.getItem("accessToken")}`;
 
-        if (!Array.isArray(fetchedPosts)) fetchedPosts = [];
+        const response = await axiosReq.get("posts/");
+        const fetchedPosts = response.data?.results ?? [];
 
+        console.log("📦 Raw fetchedPosts:", fetchedPosts);
+  
         const updatedPosts = await Promise.all(
           fetchedPosts.map(async (post) => {
             try {
               const commentResponse = await axiosReq.get(
                 `posts/${post.id}/comments/?limit=1000`
               );
-
               return {
                 ...post,
                 is_owner: post.author.toLowerCase() === currentUser,
                 comments_count: commentResponse.data.count,
                 comments: commentResponse.data.results.map((comment) => ({
                   ...comment,
-                  is_owner: comment.author.toLowerCase() === currentUser,
+                  is_owner:
+                    comment.author.toLowerCase() === currentUser,
                 })),
               };
             } catch (err) {
               console.error(
-                `❌ Error while loading comments for post ${post.id}:`,
+                `❌ Error loading comments for post ${post.id}:`,
                 err
               );
               return post;
@@ -73,7 +84,8 @@ const Dashboard = () => {
           })
         );
 
-        console.log(`✅ Posts fetched (${updatedPosts.length}):`, updatedPosts);
+        console.log("🛠️ Processed updatedPosts:", updatedPosts);
+
         setPosts(updatedPosts);
       } catch (err) {
         console.error("❌ Failed to load posts:", err);
@@ -82,9 +94,11 @@ const Dashboard = () => {
         setLoading(false);
       }
     };
-
-    fetchPosts();
-  }, [currentUser]);
+  
+    setTimeout(() => {
+      fetchPosts();
+    }, 300);
+  }, [userReady]);
 
   return (
     <Container fluid className="mt-4">

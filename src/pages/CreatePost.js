@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Container, Form, Button, Alert } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 import { axiosReq } from "../api/axios";
+import { toast } from "react-toastify";
 
 const CreatePost = () => {
   const [title, setTitle] = useState("");
@@ -54,6 +55,7 @@ const CreatePost = () => {
         },
       });
 
+      toast.success("✅ Post created successfully!");
       navigate("/dashboard");
     } catch (err) {
       console.error(

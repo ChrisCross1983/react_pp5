@@ -48,12 +48,14 @@ const Dashboard = () => {
     console.log("🟢 Fetching posts for:", currentUser);
   
     const fetchPosts = async () => {
+      console.log("📛 Token exists in fetch?", localStorage.getItem("accessToken"));
       setLoading(true);
       try {
         console.log("📤 Sending request to /posts/feed/ with token:", localStorage.getItem("accessToken"));
         axiosReq.defaults.headers.common["Authorization"] = `Bearer ${localStorage.getItem("accessToken")}`;
 
-        const response = await axiosReq.get("posts/");
+        const response = await axiosReq.get("/posts/feed/");
+        console.log("📦 Full response from /posts/feed/:", response.data);
         const fetchedPosts = response.data?.results ?? [];
 
         console.log("📦 Raw fetchedPosts:", fetchedPosts);
@@ -87,6 +89,7 @@ const Dashboard = () => {
         console.log("🛠️ Processed updatedPosts:", updatedPosts);
 
         setPosts(updatedPosts);
+        console.log("👀 Posts to render in state:", updatedPosts);
       } catch (err) {
         console.error("❌ Failed to load posts:", err);
         setError("Failed to load posts. Please try again.");

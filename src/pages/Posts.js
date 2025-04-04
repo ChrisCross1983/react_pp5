@@ -304,7 +304,10 @@ const Posts = ({ posts, loading, error, setPosts }) => {
       toast.success("✅ Post updated successfully!");
     } catch (err) {
       console.error("❌ Error updating post:", err.response?.data || err.message);
-      toast.error("❌ Failed to update post. Please try again.");
+      const errorData = err.response?.data;
+      const imgError = errorData?.image?.[0];
+      const genericError = err.message || "Failed to update post.";
+      toast.error(imgError || genericError);
     } finally {
       setIsSaving(false);
     }
@@ -410,7 +413,8 @@ const Posts = ({ posts, loading, error, setPosts }) => {
                   <Card.Body>
                     <Card.Title>{post.title}</Card.Title>
                     <Card.Subtitle className="mb-2 text-muted">
-                      Category: {post.category || "Unknown"}
+                      <strong>Category: </strong>
+                      {post.category || "Unknown"}
                     </Card.Subtitle>
                     <Card.Text>{post.description}</Card.Text>
                     <Button

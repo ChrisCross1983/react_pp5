@@ -142,10 +142,12 @@ const PostDetail = () => {
     );
   }
 
+
   const handleLike = async () => {
+    setIsLiking(true);
     if (post?.has_liked) {
       try {
-        await axiosReq.delete(`posts/${postId}/like/`, {
+        await axiosReq.delete(`likes/${post.like_id}/`, {
           headers: { "X-CSRFToken": localStorage.getItem("csrfToken") },
         });
 
@@ -153,15 +155,16 @@ const PostDetail = () => {
           ...prevPost,
           has_liked: false,
           likes_count: prevPost.likes_count - 1,
+          like_id: null,
         }));
       } catch (err) {
         console.error("❌ Error unliking post:", err);
       }
     } else {
       try {
-        await axiosReq.post(
-          `posts/${postId}/like/`,
-          {},
+        const res = await axiosReq.post(
+          `likes/`,
+          { post: postId },
           { headers: { "X-CSRFToken": localStorage.getItem("csrfToken") } }
         );
 
@@ -169,6 +172,7 @@ const PostDetail = () => {
           ...prevPost,
           has_liked: true,
           likes_count: prevPost.likes_count + 1,
+          like_id: res.data.id,
         }));
       } catch (err) {
         console.error("❌ Error liking post:", err);
@@ -176,6 +180,7 @@ const PostDetail = () => {
     }
     setIsLiking(false);
   };
+  
 
   const handleEditPost = async () => {
     setIsSaving(true);

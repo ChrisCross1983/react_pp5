@@ -23,6 +23,8 @@ const PostDetail = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [comments, setComments] = useState([]);
+  const [commentsPage, setCommentsPage] = useState(1);
+  const [hasMoreComments, setHasMoreComments] = useState(true);
   const [newComment, setNewComment] = useState("");
   const [editCommentId, setEditCommentId] = useState(null);
   const [editCommentContent, setEditCommentContent] = useState("");
@@ -38,11 +40,11 @@ const PostDetail = () => {
   );
   const [editImage, setEditImage] = useState(null);
   const [isVisible, setIsVisible] = useState(true);
-  const [visibleComments, setVisibleComments] = useState(5);
   const [isSubmitVisible, setIsSubmitVisible] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isSavingComment, setIsSavingComment] = useState(false);
+  const [isLoadingComments, setIsLoadingComments] = useState(false);
   const commentInputRef = useRef(null);
 
   // Button functionality
@@ -99,20 +101,36 @@ const PostDetail = () => {
 
   // Fetch Comments
   useEffect(() => {
-    const fetchComments = async () => {
+    const loadComments = async () => {
+      if (!hasMoreComments || isLoadingComments) return;
+  
+      setIsLoadingComments(true);
       try {
-        const response = await axiosReq.get(`posts/${postId}/comments/`);
-        setComments(response.data.results);
+        const res = await axiosReq.get(`posts/${postId}/comments/?page=${commentsPage}`);
+        setComments((prev) => [...prev, ...res.data.results]);
+        setHasMoreComments(Boolean(res.data.next));
       } catch (err) {
-        console.error(
-          "❌ Error loading comments:",
-          err.response?.data || err.message
-        );
+        console.error("❌ Error loading comments:", err);
+      } finally {
+        setIsLoadingComments(false);
       }
     };
+  
+    loadComments();
+  }, [commentsPage, postId]);
 
-    fetchComments();
-  }, [postId]);
+  // Scroll Handler
+  useEffect(() => {
+    const handleScroll = () => {
+      const bottomReached = window.innerHeight + window.scrollY >= document.body.offsetHeight - 200;
+      if (bottomReached && hasMoreComments && !isLoadingComments) {
+        setCommentsPage((prevPage) => prevPage + 1);
+      }
+    };
+  
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [hasMoreComments, isLoadingComments]);
 
   // Debugging Logs
   console.log("📌 Post Data:", post);
@@ -141,7 +159,6 @@ const PostDetail = () => {
       </Container>
     );
   }
-
 
   const handleLike = async () => {
     setIsLiking(true);
@@ -180,7 +197,6 @@ const PostDetail = () => {
     }
     setIsLiking(false);
   };
-  
 
   const handleEditPost = async () => {
     setIsSaving(true);
@@ -243,6 +259,10 @@ const PostDetail = () => {
       console.log("✅ New comment saved succesfully:", response.data);
 
       setComments((prevComments) => [response.data, ...prevComments]);
+      setPost((prev) => ({
+        ...prev,
+        comments_count: prev.comments_count + 1,
+      }));      
       setNewComment("");
       setIsSubmitVisible(false);
     } catch (err) {
@@ -283,21 +303,6 @@ const PostDetail = () => {
       toast.error("❌ Failed to update comment.");
     } finally {
       setIsSavingComment(false);
-    }
-  };
-
-  const handleDeleteComment = async (commentId) => {
-    if (!window.confirm("Are you sure you want to delete this comment?"))
-      return;
-
-    try {
-      await axiosReq.delete(`posts/comments/${commentId}/`);
-      setComments((prevComments) =>
-        prevComments.filter((c) => c.id !== commentId)
-      );
-      toast.success("✅ Comment deleted successfully!");
-    } catch (err) {
-      console.error("Error deleting comment:", err);
     }
   };
 
@@ -420,10 +425,14 @@ const PostDetail = () => {
                         block: "center",
                       });
                       commentInputRef.current.focus();
+                      commentInputRef.current.classList.add("highlight-comment");
+                      setTimeout(() => {
+                        commentInputRef.current.classList.remove("highlight-comment");
+                      }, 1000);
                     }
                   }}
                 >
-                  💬 {comments.length}
+                  💬 {post.comments_count}
                 </button>
               </div>
 
@@ -460,6 +469,7 @@ const PostDetail = () => {
                     onSubmit={handleCommentSubmit}
                   >
                     <Form.Control
+                      ref={commentInputRef}
                       as="textarea"
                       rows={1}
                       placeholder="Write a comment..."
@@ -491,7 +501,7 @@ const PostDetail = () => {
                   </Form>
 
                   {/* Comments List */}
-                  {comments.slice(0, visibleComments).map((comment) => (
+                  {comments.map((comment) => (
                     <div
                       className={`comment ${
                         comment.is_owner ? "comment-own" : ""
@@ -554,16 +564,6 @@ const PostDetail = () => {
                       </div>
                     </div>
                   ))}
-                  {/* "More..." Button */}
-                  {comments.length > visibleComments && (
-                    <Button
-                      variant="link"
-                      className="mt-2 w-100"
-                      onClick={() => setVisibleComments(visibleComments + 5)}
-                    >
-                      More...
-                    </Button>
-                  )}
                 </Card>
               </Col>
             </Row>
@@ -684,6 +684,10 @@ const PostDetail = () => {
                 setComments((prevComments) =>
                   prevComments.filter((c) => c.id !== commentToDeleteId)
                 );
+                setPost((prevPost) => ({
+                  ...prevPost,
+                  comments_count: prevPost.comments_count - 1,
+                }));                
                 toast.success("✅ Comment deleted successfully!");
               } catch (err) {
                 console.error("❌ Error deleting comment:", err);

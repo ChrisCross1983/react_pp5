@@ -20,6 +20,12 @@ code {
   background-color: rgba(255, 152, 0, 0.1);
 }
 
+.highlight-comment {
+  outline: 2px solid #007bff;
+  box-shadow: 0 0 10px rgba(0, 123, 255, 0.5);
+  transition: box-shadow 0.3s ease-in-out;
+}
+
 /* Standard-Comments */
 .border-light {
   border-left: 4px solid #f8f9fa !important;

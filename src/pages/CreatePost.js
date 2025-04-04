@@ -33,7 +33,7 @@ const CreatePost = () => {
     }
   
     if (!description.trim()) {
-      setError("Description must not be empty!");
+      toast.error("❌ Description is required!");
       return;
     }
 
@@ -135,7 +135,5 @@ const CreatePost = () => {
     </Container>
   );
 };
-
-console.log("🟢 Prüfe alle Properties von Form:", Object.keys(Form));
 
 export default CreatePost;

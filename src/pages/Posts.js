@@ -16,7 +16,6 @@ import { Link } from "react-router-dom";
 import { axiosReq } from "../api/axios";
 import { formatDistanceToNow } from "date-fns";
 import { toast } from "react-toastify";
-import { useNavigate } from "react-router-dom";
 
 const Posts = ({ posts, loading, error, setPosts }) => {
   const [selectedPost, setSelectedPost] = useState(null);
@@ -37,7 +36,6 @@ const Posts = ({ posts, loading, error, setPosts }) => {
   const [currentUser, setCurrentUser] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isSavingComment, setIsSavingComment] = useState(false);
-  const navigate = useNavigate();
 
   useEffect(() => {
     const storedUser = localStorage.getItem("username");
@@ -235,34 +233,6 @@ const Posts = ({ posts, loading, error, setPosts }) => {
     }
   };  
 
-  const handleDeleteComment = async (commentId) => {
-    if (!window.confirm("Are you sure you want to delete this comment?"))
-      return;
-
-    try {
-      await axiosReq.delete(`posts/comments/${commentId}/`);
-
-      setSelectedPost((prev) => ({
-        ...prev,
-        comments: prev.comments.filter((c) => c.id !== commentId),
-      }));
-
-      setPosts((prevPosts) =>
-        prevPosts.map((p) =>
-          p.id === selectedPost.id
-            ? {
-                ...p,
-                comments: p.comments.filter((c) => c.id !== commentId),
-                comments_count: p.comments_count - 1,
-              }
-            : p
-        )
-      );
-    } catch (err) {
-      console.error("❌ Error deleting comment:", err);
-    }
-  };
-
   const handleEditPost = (post) => {
     setEditTitle(post.title || "");
     setEditContent(post.description || "");
@@ -296,9 +266,14 @@ const Posts = ({ posts, loading, error, setPosts }) => {
         headers: { "Content-Type": "multipart/form-data" },
       });
   
-      setPosts((prevPosts) =>
-        prevPosts.map((p) => (p.id === postId ? { ...p, ...response.data } : p))
-      );
+      setPosts((prevPosts) => {
+        const updatedPosts = prevPosts.map((p) =>
+          p.id === postId ? { ...p, ...response.data } : p
+        );
+        return updatedPosts.sort(
+          (a, b) => new Date(b.updated_at) - new Date(a.updated_at)
+        );
+      });
   
       setShowEditModal(false);
       toast.success("✅ Post updated successfully!");
@@ -310,17 +285,6 @@ const Posts = ({ posts, loading, error, setPosts }) => {
       toast.error(imgError || genericError);
     } finally {
       setIsSaving(false);
-    }
-  };
-
-  const handleDeletePost = async (postId) => {
-    try {
-      await axiosReq.delete(`posts/${postId}/`);
-      setPosts((prev) => prev.filter((p) => p.id !== postId));
-      toast.success("✅ Post deleted successfully!");
-    } catch (err) {
-      toast.error("❌ Failed to delete post.");
-      console.error("❌ Error deleting post:", err);
     }
   };
 
@@ -362,9 +326,9 @@ const Posts = ({ posts, loading, error, setPosts }) => {
                       <div className="post-author-info">
                         <strong>{post.author}</strong>
                         <p className="text-muted small">
-                          {formatDistanceToNow(new Date(post.created_at), {
-                            addSuffix: true,
-                          })}
+                          {post.updated_at && post.updated_at !== post.created_at
+                            ? `📝 edited ${formatDistanceToNow(new Date(post.updated_at), { addSuffix: true })}`
+                            : formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}
                         </p>
                       </div>
                     </div>
@@ -530,11 +494,10 @@ const Posts = ({ posts, loading, error, setPosts }) => {
                               <div className="comment-meta">
                                 <strong>{comment.author}</strong>
                                 <p className="text-muted small">
-                                  {formatDistanceToNow(
-                                    new Date(comment.created_at),
-                                    { addSuffix: true }
-                                  )}
-                                </p>
+                                  {comment.created_at
+                                    ? formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })
+                                    : "Unknown date"}
+                                  </p>
                               </div>
                             </div>
 
@@ -725,19 +688,21 @@ const Posts = ({ posts, loading, error, setPosts }) => {
                   ...prev,
                   comments: prev.comments.filter((c) => c.id !== commentToDeleteId),
                 }));
-                if (typeof setPosts === "function") {
+
+                if (selectedPost?.id) {
                   setPosts((prevPosts) =>
                     prevPosts.map((p) =>
-                      p.id === postId
+                      p.id === selectedPost.id
                         ? {
                             ...p,
                             comments: p.comments.filter((c) => c.id !== commentToDeleteId),
-                            comments_count: p.comments_count - 1,
+                            comments_count: (p.comments_count ?? 1) - 1,
                           }
                         : p
                     )
                   );
                 }
+
                 toast.success("✅ Comment deleted successfully!");
               } catch (err) {
                 console.error("❌ Error deleting comment:", err);

@@ -54,7 +54,7 @@ const Posts = ({ posts, loading, error, setPosts }) => {
       console.log(`🔄 Loading comments for post ${post.id}...`);
 
       let allComments = [];
-      let nextPageUrl = `posts/${post.id}/comments/?limit=100`;
+      let nextPageUrl = `/comments/?post=${post.id}`;
 
       while (nextPageUrl) {
         const response = await axiosReq.get(nextPageUrl);
@@ -64,7 +64,7 @@ const Posts = ({ posts, loading, error, setPosts }) => {
 
       const fullComments = allComments.map((comment) => ({
         ...comment,
-        is_owner: comment.author.toLowerCase() === currentUser,
+        is_owner: comment.author?.toLowerCase?.() === currentUser,
       }));
 
       console.log(
@@ -90,9 +90,6 @@ const Posts = ({ posts, loading, error, setPosts }) => {
         )
       );
 
-      console.log(
-        `✅ Comments updated for Post ${post.id} (Total: ${post.comments_count})`
-      );
     } catch (err) {
       console.error("❌ Error loading comments:", err);
     }
@@ -138,12 +135,7 @@ const Posts = ({ posts, loading, error, setPosts }) => {
     }
 
     try {
-      console.log(
-        `📤 Sending POST request to /posts/${selectedPost.id}/comment/...`
-      );
-
-      const response = await axiosReq.post(
-        `posts/${selectedPost.id}/comment/`,
+      const response = await axiosReq.post(`/comments/`,
         { content: newComment, post: selectedPost.id }
       );
 
@@ -151,7 +143,7 @@ const Posts = ({ posts, loading, error, setPosts }) => {
 
       const newCommentData = {
         ...response.data,
-        is_owner: response.data.author.toLowerCase() === currentUser,
+        is_owner: response.data.author?.toLowerCase() === currentUser,
       };
 
       setSelectedPost((prev) => ({
@@ -198,8 +190,7 @@ const Posts = ({ posts, loading, error, setPosts }) => {
     setIsSavingComment(true);
   
     try {
-      const response = await axiosReq.put(
-        `posts/comments/${editCommentId}/`,
+      const response = await axiosReq.put(`/comments/${editCommentId}/`,
         { content: editCommentContent, post: selectedPost.id },
         {
           headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
@@ -213,13 +204,14 @@ const Posts = ({ posts, loading, error, setPosts }) => {
             ? {
                 ...c,
                 content: response.data.content,
+                updated_at: response.data.updated_at,
                 is_owner:
                   response.data.author.toLowerCase() === currentUser,
               }
             : c
         ),
       }));
-  
+
       setShowCommentEditModal(false);
       toast.success("✅ Comment updated successfully!");
     } catch (err) {
@@ -326,9 +318,9 @@ const Posts = ({ posts, loading, error, setPosts }) => {
                       <div className="post-author-info">
                         <strong>{post.author}</strong>
                         <p className="text-muted small">
-                          {post.updated_at && post.updated_at !== post.created_at
-                            ? `📝 edited ${formatDistanceToNow(new Date(post.updated_at), { addSuffix: true })}`
-                            : formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}
+                          {new Date(post.updated_at).toISOString().slice(0, 19) !== new Date(post.created_at).toISOString().slice(0, 19)
+                            ? `Updated ${formatDistanceToNow(new Date(post.updated_at), { addSuffix: true })}`
+                            : `Posted ${formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}`}
                         </p>
                       </div>
                     </div>
@@ -494,10 +486,21 @@ const Posts = ({ posts, loading, error, setPosts }) => {
                               <div className="comment-meta">
                                 <strong>{comment.author}</strong>
                                 <p className="text-muted small">
-                                  {comment.created_at
-                                    ? formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })
-                                    : "Unknown date"}
-                                  </p>
+                                  {comment?.updated_at && comment?.created_at ? (
+                                    !isNaN(new Date(comment.updated_at)) &&
+                                    !isNaN(new Date(comment.created_at)) &&
+                                    new Date(comment.updated_at).toISOString().slice(0, 19) !==
+                                      new Date(comment.created_at).toISOString().slice(0, 19)
+                                      ? `Updated ${formatDistanceToNow(new Date(comment.updated_at), {
+                                          addSuffix: true,
+                                        })}`
+                                      : `Posted ${formatDistanceToNow(new Date(comment.created_at), {
+                                          addSuffix: true,
+                                        })}`
+                                  ) : (
+                                    "Unknown time"
+                                  )}
+                                </p>
                               </div>
                             </div>
 
@@ -683,7 +686,7 @@ const Posts = ({ posts, loading, error, setPosts }) => {
             variant="danger"
             onClick={async () => {
               try {
-                await axiosReq.delete(`posts/comments/${commentToDeleteId}/`);
+                await axiosReq.delete(`/comments/${commentToDeleteId}/`);
                 setSelectedPost((prev) => ({
                   ...prev,
                   comments: prev.comments.filter((c) => c.id !== commentToDeleteId),

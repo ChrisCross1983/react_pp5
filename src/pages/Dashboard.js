@@ -64,16 +64,16 @@ const Dashboard = () => {
           fetchedPosts.map(async (post) => {
             try {
               const commentResponse = await axiosReq.get(
-                `posts/${post.id}/comments/?limit=1000`
+                `comments/?post=${post.id}`
               );
               return {
                 ...post,
-                is_owner: post.author.toLowerCase() === currentUser,
+                is_owner: post.author?.toLowerCase() === currentUser,
                 comments_count: commentResponse.data.count,
                 comments: commentResponse.data.results.map((comment) => ({
                   ...comment,
                   is_owner:
-                    comment.author.toLowerCase() === currentUser,
+                    comment.author?.toLowerCase?.() === currentUser,
                 })),
               };
             } catch (err) {

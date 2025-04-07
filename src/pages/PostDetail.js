@@ -106,7 +106,7 @@ const PostDetail = () => {
   
       setIsLoadingComments(true);
       try {
-        const res = await axiosReq.get(`posts/${postId}/comments/?page=${commentsPage}`);
+        const res = await axiosReq.get(`/comments/?post=${postId}&page=${commentsPage}`);
         setComments((prev) => [...prev, ...res.data.results]);
         setHasMoreComments(Boolean(res.data.next));
       } catch (err) {
@@ -118,6 +118,7 @@ const PostDetail = () => {
   
     loadComments();
   }, [commentsPage, postId]);
+
 
   // Scroll Handler
   useEffect(() => {
@@ -131,6 +132,17 @@ const PostDetail = () => {
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, [hasMoreComments, isLoadingComments]);
+
+
+  useEffect(() => {
+    if (post && comments.length !== post.comments_count) {
+      setPost((prevPost) => ({
+        ...prevPost,
+        comments_count: comments.length,
+      }));
+    }
+  }, [comments, post]);
+  
 
   // Debugging Logs
   console.log("📌 Post Data:", post);
@@ -219,6 +231,7 @@ const PostDetail = () => {
         category: response.data.category,
         description: response.data.description,
         image: response.data.image,
+        updated_at: response.data.updated_at,
       }));
   
       setShowEditModal(false);
@@ -251,7 +264,7 @@ const PostDetail = () => {
 
     try {
       const response = await axiosReq.post(
-        `posts/${postId}/comment/`,
+        `/comments/`,
         { content: newComment, post: postId },
         { headers: { "X-CSRFToken": localStorage.getItem("csrfToken") } }
       );
@@ -283,14 +296,20 @@ const PostDetail = () => {
     setIsSavingComment(true);
     try {
       const response = await axiosReq.put(
-        `posts/comments/${editCommentId}/`,
+        `/comments/${editCommentId}/`,
         { content: editCommentContent, post: postId },
         { headers: { "X-CSRFToken": localStorage.getItem("csrfToken") } }
       );
   
       setComments((prevComments) =>
         prevComments.map((c) =>
-          c.id === editCommentId ? { ...c, content: response.data.content } : c
+          c.id === editCommentId
+            ? {
+                ...c,
+                content: response.data.content,
+                updated_at: response.data.updated_at,
+              }
+            : c
         )
       );
       setShowCommentEditModal(false);
@@ -345,9 +364,9 @@ const PostDetail = () => {
                   <div className="post-author-info">
                     <strong>{post.author}</strong>
                     <p className="text-muted small">
-                      {formatDistanceToNow(new Date(post.created_at), {
-                        addSuffix: true,
-                      })}
+                      {new Date(post.updated_at).toISOString().slice(0, 19) !== new Date(post.created_at).toISOString().slice(0, 19)
+                        ? `Updated ${formatDistanceToNow(new Date(post.updated_at), { addSuffix: true })}`
+                        : `Posted ${formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}`}
                     </p>
                   </div>
                 </div>
@@ -375,10 +394,6 @@ const PostDetail = () => {
                           setEditImage(post.image || null);
                           setEditCategory(post.category || "general");
                           setShowEditModal(true);
-                          console.log(
-                            "📌 Setting editCategory before modal open:",
-                            post?.category
-                          );
                           setShowDropdown(false);
                         }}
                       >
@@ -522,9 +537,19 @@ const PostDetail = () => {
                           <div className="comment-meta">
                             <strong>{comment.author}</strong>
                             <p className="text-muted small">
-                              {formatDistanceToNow(
-                                new Date(comment.created_at),
-                                { addSuffix: true }
+                              {comment?.updated_at && comment?.created_at ? (
+                                !isNaN(new Date(comment.updated_at)) &&
+                                !isNaN(new Date(comment.created_at)) &&
+                                new Date(comment.updated_at).toISOString().slice(0, 19) !==
+                                  new Date(comment.created_at).toISOString().slice(0, 19)
+                                  ? `Updated ${formatDistanceToNow(new Date(comment.updated_at), {
+                                      addSuffix: true,
+                                    })}`
+                                  : `Posted ${formatDistanceToNow(new Date(comment.created_at), {
+                                      addSuffix: true,
+                                    })}`
+                              ) : (
+                                "Unknown time"
                               )}
                             </p>
                           </div>
@@ -680,7 +705,7 @@ const PostDetail = () => {
             variant="danger"
             onClick={async () => {
               try {
-                await axiosReq.delete(`posts/comments/${commentToDeleteId}/`);
+                await axiosReq.delete(`/comments/${commentToDeleteId}/`);
                 setComments((prevComments) =>
                   prevComments.filter((c) => c.id !== commentToDeleteId)
                 );
@@ -690,7 +715,6 @@ const PostDetail = () => {
                 }));                
                 toast.success("✅ Comment deleted successfully!");
               } catch (err) {
-                console.error("❌ Error deleting comment:", err);
                 toast.error("❌ Failed to delete comment.");
               } finally {
                 setShowDeleteCommentModal(false);

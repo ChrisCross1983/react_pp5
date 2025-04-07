@@ -27,8 +27,7 @@ const CreatePost = () => {
     e.preventDefault();
 
     if (!title.trim()) {
-      console.error("❌ ERROR: Title must not be empty!");
-      setError("Title must not be empty!");
+      toast.error("❌ Title cannot be empty.");
       return;
     }
   

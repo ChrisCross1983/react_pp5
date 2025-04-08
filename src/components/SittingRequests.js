@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Button, Card, Tabs, Tab } from "react-bootstrap";
+import { Button, Badge, Card, Tabs, Tab } from "react-bootstrap";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { axiosReq } from "../api/axios";
@@ -55,30 +55,40 @@ export default function SittingRequests() {
 
   return (
     <div className="p-4">
-      <Tabs defaultActiveKey="received" id="sitting-requests-tabs">
-        
-        <Tab eventKey="received" title="Received Requests">
-          {loading ? (
-            <p>Loading...</p>
-          ) : receivedRequests.length > 0 ? (
+      <Tabs
+        defaultActiveKey="received"
+        id="sitting-requests-tabs"
+        variant="pills"
+        className="mb-3 justify-content-left"
+      >
+        <Tab eventKey="received" title="📥 Received">
+          {receivedRequests.length > 0 ? (
             receivedRequests.map((request) => (
-              <Card key={request.id} className="mb-4">
-                <Card.Body className="d-flex justify-content-between align-items-center">
-                  <div>
-                    <p><strong>From:</strong> {request.sender_username}</p>
-                    <p><strong>Message:</strong> {request.message}</p>
-                    <p><strong>Status:</strong> {request.status}</p>
+              <Card key={request.id} className="mb-3 shadow-sm">
+                <Card.Body>
+                  <Card.Title>
+                    From: <strong>{request.sender_username}</strong>
+                  </Card.Title>
+                  <Card.Text>{request.message}</Card.Text>
+                  <div className="d-flex justify-content-between align-items-center">
+                    <Badge
+                      bg={
+                        request.status === "pending"
+                          ? "warning"
+                          : request.status === "accepted"
+                          ? "success"
+                          : "danger"
+                      }
+                    >
+                      {request.status}
+                    </Badge>
+                    {request.status === "pending" && (
+                      <div className="d-flex gap-2">
+                        <Button size="sm" onClick={() => handleRequestAction(request.id, "accepted")}>✅ Accept</Button>
+                        <Button size="sm" variant="danger" onClick={() => handleRequestAction(request.id, "declined")}>❌ Decline</Button>
+                      </div>
+                    )}
                   </div>
-                  {request.status === "pending" && (
-                    <div className="space-x-2">
-                      <Button onClick={() => handleRequestAction(request.id, "accepted")}>
-                        ✅ Accept
-                      </Button>
-                      <Button variant="danger" onClick={() => handleRequestAction(request.id, "declined")}>
-                        ❌ Decline
-                      </Button>
-                    </div>
-                  )}
                 </Card.Body>
               </Card>
             ))
@@ -87,16 +97,26 @@ export default function SittingRequests() {
           )}
         </Tab>
 
-        <Tab eventKey="sent" title="Sent Requests">
-          {loading ? (
-            <p>Loading...</p>
-          ) : sentRequests.length > 0 ? (
+        <Tab eventKey="sent" title="📤 Sent">
+          {sentRequests.length > 0 ? (
             sentRequests.map((request) => (
-              <Card key={request.id} className="mb-4">
+              <Card key={request.id} className="mb-3 shadow-sm">
                 <Card.Body>
-                  <p><strong>To:</strong> {request.receiver_username}</p>
-                  <p><strong>Message:</strong> {request.message}</p>
-                  <p><strong>Status:</strong> {request.status}</p>
+                  <Card.Title>
+                    To: <strong>{request.receiver_username}</strong>
+                  </Card.Title>
+                  <Card.Text>{request.message}</Card.Text>
+                  <Badge
+                    bg={
+                      request.status === "pending"
+                        ? "warning"
+                        : request.status === "accepted"
+                        ? "success"
+                        : "danger"
+                    }
+                  >
+                    {request.status}
+                  </Badge>
                 </Card.Body>
               </Card>
             ))
@@ -107,7 +127,7 @@ export default function SittingRequests() {
       </Tabs>
 
       <Button variant="success" className="mt-3" onClick={() => createSittingRequest(1)}>
-        🐱 Request Sitting (Test Post ID = 1)
+        🐱 Request Sitting
       </Button>
     </div>
   );

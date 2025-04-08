@@ -44,6 +44,23 @@ const Posts = ({ posts, loading, error, setPosts }) => {
     }
   }, []);
 
+  useEffect(() => {
+    const handleOutsideClick = (e) => {
+      if (
+        selectedPost &&
+        !e.target.closest(".comment-container") &&
+        !e.target.closest(".comment-button")
+      ) {
+        setSelectedPost(null);
+      }
+    };
+  
+    document.addEventListener("mousedown", handleOutsideClick);
+    return () => {
+      document.removeEventListener("mousedown", handleOutsideClick);
+    };
+  }, [selectedPost]);  
+
   const toggleComments = async (post) => {
     if (!currentUser) {
       console.warn("⏳ Waiting for currentUser to be set...");
@@ -302,7 +319,7 @@ const Posts = ({ posts, loading, error, setPosts }) => {
         <>
           <Row className="justify-content-center">
             {posts.map((post) => (
-              <Col md={8} key={post.id} className="mb-4">
+              <Col md={10} key={post.id} className="mb-4">
                 <Card className="shadow-sm">
                   {/* Post Author Bar */}
                   <div className="post-author-bar">

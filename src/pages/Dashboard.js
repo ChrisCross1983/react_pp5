@@ -1,11 +1,13 @@
 import React, { useEffect, useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
-import { Container, Row, Col, Button } from "react-bootstrap";
+import { Container, Row, Col, Button, Card } from "react-bootstrap";
 import TopFollowedUsers from "../components/TopFollowedUsers";
 import SittingRequests from "../components/SittingRequests";
 import Posts from "./Posts";
 import { axiosReq } from "../api/axios";
 import { AuthContext } from "../context/AuthContext";
+import Offcanvas from "react-bootstrap/Offcanvas";
+
 
 const Dashboard = () => {
   const { username } = useContext(AuthContext);
@@ -15,6 +17,8 @@ const Dashboard = () => {
   const [error, setError] = useState(null);
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [userReady, setUserReady] = useState(false);
+  const [showLeft, setShowLeft] = useState(false);
+  const [showRight, setShowRight] = useState(false);
 
   // Set User ready
   useEffect(() => {
@@ -116,8 +120,12 @@ const Dashboard = () => {
       <Row>
         {/* Left Sidebar - Top Followed Users */}
         <Col md={3} className="d-none d-md-block">
-          <h3>🔥 Top Followed Users</h3>
-          <TopFollowedUsers />
+          <Card className="mb-4 shadow-sm sidebar-card">
+            <Card.Header className="bg-light fw-bold">🔥 Top Followed Users</Card.Header>
+            <Card.Body>
+              <TopFollowedUsers />
+            </Card.Body>
+          </Card>
         </Col>
 
         {/* Main Content - Posts Feed */}
@@ -132,25 +140,62 @@ const Dashboard = () => {
 
         {/* Right Sidebar - Sitting Requests */}
         <Col md={3} className="d-none d-md-block">
-          <h3>🐾 Sitting Requests</h3>
-          <SittingRequests />
+          <Card className="mb-4 shadow-sm sidebar-card">
+            <Card.Header className="bg-light fw-bold">🐾 Sitting Requests</Card.Header>
+            <Card.Body>
+              <SittingRequests />
+            </Card.Body>
+          </Card>
+        </Col>
+
+        {/* MOBILE Offcanvas */}
+        <Col xs={12} className="d-block d-md-none">
+          {/* Fixed Buttons at the bottom */}
+          <div className="d-flex justify-content-between fixed-bottom px-3 pb-3">
+            <Button
+              variant="outline-secondary"
+              onClick={() => setShowLeft(true)}
+              style={{ borderRadius: "50%", width: "50px", height: "50px" }}
+            >
+              🔥
+            </Button>
+            <Button
+              variant="outline-secondary"
+              onClick={() => setShowRight(true)}
+              style={{ borderRadius: "50%", width: "50px", height: "50px" }}
+            >
+              🐾
+            </Button>
+          </div>
+
+          {/* Offcanvas - Left (TopFollowedUsers) */}
+          <Offcanvas show={showLeft} onHide={() => setShowLeft(false)} placement="start">
+            <Offcanvas.Header closeButton>
+              <Offcanvas.Title>🔥 Top Followed Users</Offcanvas.Title>
+            </Offcanvas.Header>
+            <Offcanvas.Body>
+              <TopFollowedUsers />
+            </Offcanvas.Body>
+          </Offcanvas>
+
+          {/* Offcanvas - Right (SittingRequests) */}
+          <Offcanvas show={showRight} onHide={() => setShowRight(false)} placement="end">
+            <Offcanvas.Header closeButton>
+              <Offcanvas.Title>🐾 Sitting Requests</Offcanvas.Title>
+            </Offcanvas.Header>
+            <Offcanvas.Body>
+              <SittingRequests />
+            </Offcanvas.Body>
+          </Offcanvas>
         </Col>
       </Row>
 
       {/* Scroll-to-Top Button */}
       {showScrollTop && (
         <Button
+          className="scroll-btn"
           variant="dark"
           onClick={scrollToTop}
-          style={{
-            position: "fixed",
-            bottom: "20px",
-            right: "20px",
-            borderRadius: "50%",
-            padding: "10px 15px",
-            fontSize: "20px",
-            boxShadow: "0px 4px 6px rgba(0, 0, 0, 0.1)",
-          }}
         >
           ⬆️
         </Button>

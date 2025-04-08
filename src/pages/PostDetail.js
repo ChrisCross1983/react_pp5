@@ -176,7 +176,7 @@ const PostDetail = () => {
     setIsLiking(true);
     if (post?.has_liked) {
       try {
-        await axiosReq.delete(`likes/${post.like_id}/`, {
+        await axiosReq.delete(`posts/${postId}/like/`, {
           headers: { "X-CSRFToken": localStorage.getItem("csrfToken") },
         });
 
@@ -192,8 +192,8 @@ const PostDetail = () => {
     } else {
       try {
         const res = await axiosReq.post(
-          `likes/`,
-          { post: postId },
+          `posts/${postId}/like/`,
+          {},
           { headers: { "X-CSRFToken": localStorage.getItem("csrfToken") } }
         );
 

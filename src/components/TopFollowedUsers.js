@@ -1,6 +1,6 @@
 import React from "react";
 import { useEffect, useState } from "react";
-import { Button, Card, Tabs, Tab } from "react-bootstrap";
+import { Button, Card, Tabs, Tab, Badge } from "react-bootstrap";
 import { axiosReq } from "../api/axios";
 
 export default function TopFollowedUsers() {
@@ -35,26 +35,50 @@ export default function TopFollowedUsers() {
   };
 
   return (
-    <div className="p-6">
-      <Tabs defaultActiveKey="received" id="sitting-requests-tabs">
-        <Tab eventKey="received" title="Received Requests">
+    <div className="p-3">
+      <Tabs
+        defaultActiveKey="received"
+        id="top-followed-tabs"
+        variant="pills"
+        className="mb-3 justify-content-left"
+      >
+        <Tab eventKey="received" title="📥 Received">
           {loading ? (
             <p>Loading...</p>
           ) : receivedRequests.length > 0 ? (
             receivedRequests.map((request) => (
-              <Card key={request.id} className="mb-4">
-                <Card.Body className="d-flex justify-content-between align-items-center">
+              <Card key={request.id} className="mb-3 shadow-sm">
+                <Card.Body className="d-flex justify-content-between align-items-start">
                   <div>
-                    <p><strong>From:</strong> {request.sender.username}</p>
-                    <p><strong>Message:</strong> {request.message}</p>
-                    <p><strong>Status:</strong> {request.status}</p>
+                    <Card.Title>
+                      From: <strong>{request.sender?.username}</strong>
+                    </Card.Title>
+                    <Card.Text>{request.message}</Card.Text>
+                    <Badge
+                      bg={
+                        request.status === "pending"
+                          ? "warning"
+                          : request.status === "accepted"
+                          ? "success"
+                          : "danger"
+                      }
+                    >
+                      {request.status}
+                    </Badge>
                   </div>
                   {request.status === "pending" && (
-                    <div className="space-x-2">
-                      <Button onClick={() => handleRequestAction(request.id, "accept")}>
+                    <div className="d-flex flex-column gap-2 align-items-end">
+                      <Button
+                        size="sm"
+                        onClick={() => handleRequestAction(request.id, "accept")}
+                      >
                         ✅ Accept
                       </Button>
-                      <Button variant="danger" onClick={() => handleRequestAction(request.id, "decline")}>
+                      <Button
+                        size="sm"
+                        variant="danger"
+                        onClick={() => handleRequestAction(request.id, "decline")}
+                      >
                         ❌ Decline
                       </Button>
                     </div>
@@ -67,16 +91,28 @@ export default function TopFollowedUsers() {
           )}
         </Tab>
 
-        <Tab eventKey="sent" title="Sent Requests">
+        <Tab eventKey="sent" title="📤 Sent">
           {loading ? (
             <p>Loading...</p>
           ) : sentRequests.length > 0 ? (
             sentRequests.map((request) => (
-              <Card key={request.id} className="mb-4">
+              <Card key={request.id} className="mb-3 shadow-sm">
                 <Card.Body>
-                  <p><strong>To:</strong> {request.receiver.username}</p>
-                  <p><strong>Message:</strong> {request.message}</p>
-                  <p><strong>Status:</strong> {request.status}</p>
+                  <Card.Title>
+                    To: <strong>{request.receiver?.username}</strong>
+                  </Card.Title>
+                  <Card.Text>{request.message}</Card.Text>
+                  <Badge
+                    bg={
+                      request.status === "pending"
+                        ? "warning"
+                        : request.status === "accepted"
+                        ? "success"
+                        : "danger"
+                    }
+                  >
+                    {request.status}
+                  </Badge>
                 </Card.Body>
               </Card>
             ))

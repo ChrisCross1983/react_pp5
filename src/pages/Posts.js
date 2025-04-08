@@ -16,6 +16,7 @@ import { Link } from "react-router-dom";
 import { axiosReq } from "../api/axios";
 import { formatDistanceToNow } from "date-fns";
 import { toast } from "react-toastify";
+import { Badge as BsBadge } from "react-bootstrap";
 
 const Posts = ({ posts, loading, error, setPosts }) => {
   const [selectedPost, setSelectedPost] = useState(null);
@@ -36,6 +37,11 @@ const Posts = ({ posts, loading, error, setPosts }) => {
   const [currentUser, setCurrentUser] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isSavingComment, setIsSavingComment] = useState(false);
+  const [showSittingModal, setShowSittingModal] = useState(false);
+  const [sittingMessage, setSittingMessage] = useState("");
+  const [sittingPost, setSittingPost] = useState(null);
+  const [alreadyRequestedPostIds, setAlreadyRequestedPostIds] = useState([]);
+  const closeOverlay = () => setSelectedPost(null);
 
   useEffect(() => {
     const storedUser = localStorage.getItem("username");
@@ -49,7 +55,8 @@ const Posts = ({ posts, loading, error, setPosts }) => {
       if (
         selectedPost &&
         !e.target.closest(".comment-container") &&
-        !e.target.closest(".comment-button")
+        !e.target.closest(".comment-button") &&
+        !e.target.closest(".modal")
       ) {
         setSelectedPost(null);
       }
@@ -59,7 +66,24 @@ const Posts = ({ posts, loading, error, setPosts }) => {
     return () => {
       document.removeEventListener("mousedown", handleOutsideClick);
     };
-  }, [selectedPost]);  
+  }, [selectedPost]);
+
+  useEffect(() => {
+    const fetchSentRequests = async () => {
+      try {
+        const response = await axiosReq.get("/posts/requests/sent/");
+        console.log("🚀 Sent Requests Response:", response.data);
+        const postIds = Array.isArray(response.data)
+          ? response.data.map((req) => req.post)
+          : [];
+        setAlreadyRequestedPostIds(postIds);
+      } catch (err) {
+        console.error("❌ Error fetching sent requests", err);
+      }
+    };
+    fetchSentRequests();
+  }, []);
+
 
   const toggleComments = async (post) => {
     if (!currentUser) {
@@ -297,10 +321,41 @@ const Posts = ({ posts, loading, error, setPosts }) => {
     }
   };
 
+  const handleSittingRequestSubmit = async (postId) => {
+    if (!sittingPost?.id) return;
+
+    console.log("📨 Submitting request to", `/posts/${postId}/request/`, {
+      post: postId,
+      message: sittingMessage,
+    });
+    
+    try {
+      await axiosReq.post(`/posts/${postId}/request/`, {
+        post: postId,
+        message: sittingMessage,
+      });
+      toast.success("✅ Request sent successfully!");
+      setAlreadyRequestedPostIds((prev) => [...prev, sittingPost.id]);
+    } catch (err) {
+      console.error("❌ Error sending request", err);
+      toast.error("❌ Failed to send request.");
+    } finally {
+      setSittingMessage("");
+      setShowSittingModal(false);
+      setSittingPost(null);
+    }
+  };
+
   const categoryMap = {
     offer: "offer",
     search: "search",
     general: "general",
+  };
+
+  const categoryColors = {
+    "sitting offer": "success",
+    "sitting request": "warning",
+    "general": "primary",
   };
 
   const handleTextareaResize = (event) => {
@@ -387,16 +442,36 @@ const Posts = ({ posts, loading, error, setPosts }) => {
                     <Card.Title>{post.title}</Card.Title>
                     <Card.Subtitle className="mb-2 text-muted">
                       <strong>Category: </strong>
-                      {post.category || "Unknown"}
+                      <BsBadge
+                        bg={categoryColors[post.category] || "secondary"}
+                        className="mb-2"
+                      >
+                        {post.category || "General"}
+                      </BsBadge>
                     </Card.Subtitle>
                     <Card.Text>{post.description}</Card.Text>
-                    <Button
-                      as={Link}
-                      to={`/posts/${post.id}/`}
-                      variant="primary"
-                    >
-                      View Details
-                    </Button>
+                    <div className="d-flex justify-content-between align-items-center mt-3 flex-wrap gap-2">
+                      <Button as={Link} to={`/posts/${post.id}/`} variant="primary">
+                        View Details
+                      </Button>
+
+                      {(post.category === "offer" || post.category === "search") && !post.is_owner && (
+                        alreadyRequestedPostIds.includes(post.id) ? (
+                          <span className="badge bg-secondary">🕓 Request Sent</span>
+                        ) : (
+                          <Button
+                            variant="outline-primary"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSittingPost(post);
+                              setShowSittingModal(true);
+                            }}
+                          >
+                            🙋 {post.category === "offer" ? "Request Sitting" : "Offer Sitting"}
+                          </Button>
+                        )
+                      )}
+                    </div>
 
                     {/* Like & Comment Buttons */}
                     <div className="post-actions">
@@ -425,12 +500,16 @@ const Posts = ({ posts, loading, error, setPosts }) => {
           <AnimatePresence>
             {selectedPost && (
               <motion.div
-                initial={{ y: "100%" }}
-                animate={{ y: "0%" }}
-                exit={{ y: "100%" }}
+                role="dialog"
+                aria-modal="true"
+                initial={{ y: "100%", x: "-50%" }}
+                animate={{ y: "0%", x: "-50%" }}
+                exit={{ y: "100%", x: "-50%" }}
                 transition={{ duration: 0.5, ease: "easeInOut" }}
                 className="comment-overlay"
-                onClick={() => setSelectedPost(null)}
+                onClick={(e) => {
+                  if (e.target === e.currentTarget) closeOverlay();
+                }}
               >
                 <div
                   className="comment-container"
@@ -733,6 +812,46 @@ const Posts = ({ posts, loading, error, setPosts }) => {
             }}
           >
             Delete
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      {/* Sitting Request Modal */}
+      <Modal
+        show={showSittingModal}
+        onHide={() => {
+          setShowSittingModal(false);
+          setSittingPost(null);
+          setSittingMessage("");
+        }}
+        centered
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>🙋 Sitting Request</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Form>
+            <Form.Group controlId="sittingRequestMessage">
+              <Form.Label>Optional message:</Form.Label>
+              <Form.Control
+                as="textarea"
+                rows={3}
+                value={sittingMessage}
+                onChange={(e) => setSittingMessage(e.target.value)}
+                placeholder="Write something for the receiver..."
+              />
+            </Form.Group>
+          </Form>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowSittingModal(false)}>
+            Cancel
+          </Button>
+          <Button
+            variant="primary"
+            onClick={() => handleSittingRequestSubmit(sittingPost.id)}
+          >
+            Send Request
           </Button>
         </Modal.Footer>
       </Modal>

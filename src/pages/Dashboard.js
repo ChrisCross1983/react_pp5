@@ -1,13 +1,13 @@
 import React, { useEffect, useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import { Container, Row, Col, Button, Card } from "react-bootstrap";
-import TopFollowedUsers from "../components/TopFollowedUsers";
-import SittingRequests from "../components/SittingRequests";
 import Posts from "./Posts";
 import { axiosReq } from "../api/axios";
 import { AuthContext } from "../context/AuthContext";
 import Offcanvas from "react-bootstrap/Offcanvas";
-
+import SittingRequestsPage from "../pages/SittingRequestsPage";
+import DashboardSidebar from "../components/DashboardSidebar";
+import DashboardInsights from "../components/DashboardInsights";
 
 const Dashboard = () => {
   const { username } = useContext(AuthContext);
@@ -118,12 +118,12 @@ const Dashboard = () => {
       </Row>
 
       <Row>
-        {/* Left Sidebar - Top Followed Users */}
+        {/* Left Sidebar - Dashboard Insights */}
         <Col md={3} className="d-none d-md-block">
           <Card className="mb-4 shadow-sm sidebar-card">
-            <Card.Header className="bg-light fw-bold">🔥 Top Followed Users</Card.Header>
+            <Card.Header className="bg-light fw-bold">📌 Dashboard Insights</Card.Header>
             <Card.Body>
-              <TopFollowedUsers />
+              <DashboardInsights />
             </Card.Body>
           </Card>
         </Col>
@@ -138,14 +138,9 @@ const Dashboard = () => {
           />
         </Col>
 
-        {/* Right Sidebar - Sitting Requests */}
+        {/* Right Sidebar - Sitting Requests Overview */}
         <Col md={3} className="d-none d-md-block">
-          <Card className="mb-4 shadow-sm sidebar-card">
-            <Card.Header className="bg-light fw-bold">🐾 Sitting Requests</Card.Header>
-            <Card.Body>
-              <SittingRequests />
-            </Card.Body>
-          </Card>
+          <DashboardSidebar />
         </Col>
 
         {/* MOBILE Offcanvas */}
@@ -168,13 +163,13 @@ const Dashboard = () => {
             </Button>
           </div>
 
-          {/* Offcanvas - Left (TopFollowedUsers) */}
+          {/* Offcanvas - Left (DashboardInsights) */}
           <Offcanvas show={showLeft} onHide={() => setShowLeft(false)} placement="start">
             <Offcanvas.Header closeButton>
-              <Offcanvas.Title>🔥 Top Followed Users</Offcanvas.Title>
+              <Offcanvas.Title>📌 Dashboard Insights</Offcanvas.Title>
             </Offcanvas.Header>
             <Offcanvas.Body>
-              <TopFollowedUsers />
+              <DashboardInsights />
             </Offcanvas.Body>
           </Offcanvas>
 
@@ -184,7 +179,7 @@ const Dashboard = () => {
               <Offcanvas.Title>🐾 Sitting Requests</Offcanvas.Title>
             </Offcanvas.Header>
             <Offcanvas.Body>
-              <SittingRequests />
+              <SittingRequestsPage />
             </Offcanvas.Body>
           </Offcanvas>
         </Col>

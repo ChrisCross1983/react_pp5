@@ -90,7 +90,7 @@ const PostDetail = () => {
   const categoryColors = {
     "sitting offer": "success",
     "sitting request": "warning",
-    general: "primary",
+    "general": "primary",
   };
 
   const categoryMap = {
@@ -453,15 +453,14 @@ const PostDetail = () => {
 
               <Card.Body>
                 <Card.Title className="mt-3">{post.title}</Card.Title>
-                <BsBadge
-                  bg={categoryColors[post.category] || "secondary"}
-                  className="mb-2"
-                >
-                  {post.category || "General"}
-                </BsBadge>
                 <Card.Text>
                   <strong>Category: </strong>
-                  {post.category}
+                  <BsBadge
+                    bg={categoryColors[post.category] || "secondary"}
+                    className="mb-2"
+                  >
+                    {post.category || "General"}
+                  </BsBadge>
                 </Card.Text>
                 <Card.Text>{post.description}</Card.Text>
               </Card.Body>

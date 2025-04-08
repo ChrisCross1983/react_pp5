@@ -12,7 +12,7 @@ import {
   Tabs,
   Tab,
 } from "react-bootstrap";
-import SittingRequests from "../components/SittingRequests";
+import SittingRequestsPage from "../pages/SittingRequestsPage";
 
 const Profile = () => {
   const { id } = useParams();
@@ -195,7 +195,7 @@ const Profile = () => {
         </Tab>
 
         <Tab eventKey="sitting-requests" title="Sitting Requests">
-          <SittingRequests />
+          <SittingRequestsPage />
         </Tab>
       </Tabs>
 

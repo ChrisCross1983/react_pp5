@@ -12,7 +12,7 @@ const Navigation = () => {
 
   const fetchNotifications = useCallback(async () => {
     try {
-      const response = await axiosReq.get("notifications/");
+      const response = await axiosReq.get("notifications/all/");
 
       if (response.data && Array.isArray(response.data.results)) {
         setNotifications(response.data.results);

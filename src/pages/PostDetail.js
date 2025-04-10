@@ -28,6 +28,8 @@ const PostDetail = () => {
   const [newComment, setNewComment] = useState("");
   const [editCommentId, setEditCommentId] = useState(null);
   const [editCommentContent, setEditCommentContent] = useState("");
+  const [replyContent, setReplyContent] = useState({});
+  const [showReplyForm, setShowReplyForm] = useState({});
   const [isLiking, setIsLiking] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showCommentEditModal, setShowCommentEditModal] = useState(false);
@@ -45,7 +47,11 @@ const PostDetail = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [isSavingComment, setIsSavingComment] = useState(false);
   const [isLoadingComments, setIsLoadingComments] = useState(false);
+  const [expandedReplies, setExpandedReplies] = useState({});
+  const MAX_REPLIES_SHOWN = 3;
   const commentInputRef = useRef(null);
+  const commentRefs = useRef({});
+
 
   // Button functionality
   useEffect(() => {
@@ -109,6 +115,17 @@ const PostDetail = () => {
         const res = await axiosReq.get(`/comments/?post=${postId}&page=${commentsPage}`);
         setComments((prev) => [...prev, ...res.data.results]);
         setHasMoreComments(Boolean(res.data.next));
+
+        // Read comment ID from URL and reload
+        const query = new URLSearchParams(window.location.search);
+        const commentId = query.get("comment");
+        if (commentId) {
+          setTimeout(() => {
+            const el = commentRefs.current[commentId];
+            if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+          }, 500);
+        }
+
       } catch (err) {
         console.error("❌ Error loading comments:", err);
       } finally {
@@ -302,16 +319,30 @@ const PostDetail = () => {
       );
   
       setComments((prevComments) =>
-        prevComments.map((c) =>
-          c.id === editCommentId
-            ? {
-                ...c,
-                content: response.data.content,
-                updated_at: response.data.updated_at,
-              }
-            : c
-        )
+        prevComments.map((c) => {
+          if (c.id === editCommentId) {
+            return {
+              ...c,
+              content: response.data.content,
+              updated_at: response.data.updated_at,
+            };
+          }
+      
+          return {
+            ...c,
+            replies: c.replies.map((r) =>
+              r.id === editCommentId
+                ? {
+                    ...r,
+                    content: response.data.content,
+                    updated_at: response.data.updated_at,
+                  }
+                : r
+            ),
+          };
+        })
       );
+
       setShowCommentEditModal(false);
       toast.success("✅ Comment updated successfully!");
     } catch (err) {
@@ -325,6 +356,86 @@ const PostDetail = () => {
     }
   };
 
+  const handleReplySubmit = async (commentId) => {
+    try {
+      const response = await axiosReq.post(`/comments/`, {
+        post: postId,
+        content: replyContent[commentId],
+        parent: commentId,
+      });
+  
+      setReplyContent({ ...replyContent, [commentId]: "" });
+      setShowReplyForm({ ...showReplyForm, [commentId]: false });
+  
+      setComments((prev) =>
+        prev.map((c) => {
+          if (c.id === commentId) {
+            return {
+              ...c,
+              replies: [
+                {
+                  ...response.data,
+                  is_owner: true,
+                },
+                ...(c.replies || []),
+              ],
+            };
+          }
+          return c;
+        })
+      );
+  
+      toast.success("✅ Reply posted!");
+    } catch (err) {
+      console.error("❌ Failed to reply:", err);
+      toast.error("❌ Failed to reply.");
+    }
+  };
+
+  const handleLikeComment = async (commentId) => {
+    try {
+      const liked = comments.some(c => c.id === commentId ? !c.has_liked : c.replies?.some(r => r.id === commentId && !r.has_liked));
+    
+      await axiosReq.post(`/comments/${commentId}/like/`);
+      toast[liked ? "success" : "error"](liked ? "👍 Liked" : "💔 Unliked");
+
+      setComments((prev) =>
+        prev.map((c) => {
+          if (c.id === commentId) {
+            const liked = !c.has_liked;
+            return {
+              ...c,
+              has_liked: liked,
+              likes_count: liked
+                ? c.likes_count + 1
+                : c.likes_count - 1,
+            };
+          }
+  
+          return {
+            ...c,
+            replies: c.replies.map((r) => {
+              if (r.id === commentId) {
+                const liked = !r.has_liked;
+                return {
+                  ...r,
+                  has_liked: liked,
+                  likes_count: liked
+                    ? r.likes_count + 1
+                    : r.likes_count - 1,
+                };
+              }
+              return r;
+            }),
+          };
+        })
+      );
+    } catch (err) {
+      toast.error("❌ Like failed");
+      console.error("Like error:", err);
+    }
+  };  
+  
   const toggleDropdown = () => setShowDropdown(!showDropdown);
 
   const handleTextareaResize = (event) => {
@@ -421,7 +532,7 @@ const PostDetail = () => {
                 className="post-image"
               />
 
-              {/* 🖤 Like & Comment Buttons */}
+              {/* Like & Comment Buttons */}
               <div className="post-actions">
                 <button
                   className={`like-button ${post.has_liked ? "active" : ""}`}
@@ -517,74 +628,190 @@ const PostDetail = () => {
                   {/* Comments List */}
                   {comments.map((comment) => (
                     <div
-                      className={`comment ${
-                        comment.is_owner ? "comment-own" : ""
-                      }`}
                       key={comment.id}
+                      ref={(el) => (commentRefs.current[comment.id] = el)}
+                      className={`comment ${comment.is_owner ? "comment-own" : ""}`}
                     >
-                      {/* Author Bar for comments */}
+                      {/* Main comment */}
                       <div className="comment-header">
                         <div className="comment-info">
                           <img
-                            src={
-                              comment.author_image ||
-                              "https://res.cloudinary.com/daj7vkzdw/image/upload/v1737570810/default_profile_uehpos.jpg"
-                            }
+                            src={comment.profile_image}
                             alt="Profile"
                             className="comment-avatar"
                           />
                           <div className="comment-meta">
                             <strong>{comment.author}</strong>
                             <p className="text-muted small">
-                              {comment?.updated_at && comment?.created_at ? (
-                                !isNaN(new Date(comment.updated_at)) &&
-                                !isNaN(new Date(comment.created_at)) &&
-                                new Date(comment.updated_at).toISOString().slice(0, 19) !==
-                                  new Date(comment.created_at).toISOString().slice(0, 19)
-                                  ? `Updated ${formatDistanceToNow(new Date(comment.updated_at), {
-                                      addSuffix: true,
-                                    })}`
-                                  : `Posted ${formatDistanceToNow(new Date(comment.created_at), {
-                                      addSuffix: true,
-                                    })}`
-                              ) : (
-                                "Unknown time"
-                              )}
+                              {new Date(comment.created_at).toLocaleString()}
                             </p>
                           </div>
                         </div>
 
-                        {/* 3 Point Menu Bar for Edit / Delete comments */}
+                        {/* 3 point menu */}
                         {comment.is_owner && (
                           <BsDropdown className="comment-options">
-                            <BsDropdown.Toggle
-                              as="button"
-                              className="comment-options-btn"
-                            >
-                              ⋮
-                            </BsDropdown.Toggle>
+                            <BsDropdown.Toggle as="button" className="comment-options-btn">⋮</BsDropdown.Toggle>
                             <BsDropdown.Menu align="end">
-                              <BsDropdown.Item
-                                onClick={() => handleEditComment(comment)}
-                              >
-                                ✏️ Edit
-                              </BsDropdown.Item>
-                              <BsDropdown.Item
-                                onClick={() => {
-                                  setCommentToDeleteId(comment.id);
-                                  setShowDeleteCommentModal(true);
-                                }}
-                                className="text-danger"
-                              >
-                                🗑 Delete
-                              </BsDropdown.Item>
+                              <BsDropdown.Item onClick={() => handleEditComment(comment)}>✏️ Edit</BsDropdown.Item>
+                              <BsDropdown.Item className="text-danger" onClick={() => {
+                                setCommentToDeleteId(comment.id);
+                                setShowDeleteCommentModal(true);
+                              }}>🗑 Delete</BsDropdown.Item>
                             </BsDropdown.Menu>
                           </BsDropdown>
                         )}
                       </div>
-                      {/* Comment Content */}
+
+                      {/* Content */}
                       <div className="comment-body">
                         <p className="comment-content">{comment.content}</p>
+
+                        <div className="mt-2 d-flex gap-2">
+                          <Button
+                            size="sm"
+                            variant={comment.has_liked ? "primary" : "outline-primary"}
+                            onClick={() => handleLikeComment(comment.id)}
+                          >
+                            👍 Like <span className="text-muted">|</span> <span>{comment.likes_count}</span>
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline-secondary"
+                            onClick={() =>
+                              setShowReplyForm((prev) => ({
+                                ...prev,
+                                [comment.id]: !prev[comment.id],
+                              }))
+                            }
+                          >
+                            ↩ Reply
+                          </Button>
+                        </div>
+
+                        {/* Reply form */}
+                        {showReplyForm[comment.id] && (
+                          <Form className="comment-input mt-2" onSubmit={(e) => {
+                            e.preventDefault();
+                            handleReplySubmit(comment.id);
+                          }}>
+                            <Form.Control
+                              as="textarea"
+                              rows={1}
+                              placeholder="Write a reply..."
+                              value={replyContent[comment.id] || ""}
+                              onChange={(e) =>
+                                setReplyContent({
+                                  ...replyContent,
+                                  [comment.id]: e.target.value,
+                                })
+                              }
+                              onInput={handleTextareaResize}
+                              style={{
+                                resize: "none",
+                                overflowY: "hidden",
+                                minHeight: "40px",
+                              }}
+                            />
+                            {replyContent[comment.id]?.trim() && (
+                              <Button
+                                type="submit"
+                                variant="primary"
+                                className="comment-submit-btn"
+                                style={{
+                                  opacity: 1,
+                                  transition: "opacity 0.3s ease-in-out",
+                                }}
+                              >
+                                ➤
+                              </Button>
+                            )}
+                          </Form>
+                        )}
+
+                        {/* REPLIES (level 2) */}
+                        {comment.replies?.length > 0 && (
+                          <div className="mt-3 ms-4 ps-3 border-start border-secondary-subtle">
+                            {(
+                              expandedReplies[comment.id]
+                                ? comment.replies
+                                : comment.replies.slice(0, MAX_REPLIES_SHOWN)
+                            ).map((reply) => (
+                              <div key={reply.id} className="reply">
+                                <div className="d-flex justify-content-between align-items-start">
+                                  <div className="d-flex align-items-start gap-2">
+                                    <img
+                                      src={reply.profile_image}
+                                      alt="Reply Avatar"
+                                      className="comment-avatar-sm"
+                                    />
+                                    <div>
+                                      <strong>{reply.author}</strong>{" "}
+                                      <span className="text-muted small">
+                                        {new Date(reply.created_at).toLocaleString()}
+                                      </span>
+                                      <p className="comment-content mb-2">{reply.content}</p>
+                                      <Button
+                                        size="sm"
+                                        variant={reply.has_liked ? "primary" : "outline-primary"}
+                                        onClick={() => handleLikeComment(reply.id)}
+                                      >
+                                        👍 Like <span className="text-muted">|</span> <span>{reply.likes_count}</span>
+                                      </Button>
+                                    </div>
+                                  </div>
+
+                                  {/* 3 point menu */}
+                                  {reply.is_owner && (
+                                    <BsDropdown className="comment-options ms-2">
+                                      <BsDropdown.Toggle
+                                        as="button"
+                                        className="comment-options-btn"
+                                      >
+                                        ⋮
+                                      </BsDropdown.Toggle>
+                                      <BsDropdown.Menu align="end">
+                                        <BsDropdown.Item onClick={() => handleEditComment(reply)}>
+                                          ✏️ Edit
+                                        </BsDropdown.Item>
+                                        <BsDropdown.Item
+                                          className="text-danger"
+                                          onClick={() => {
+                                            setCommentToDeleteId(reply.id);
+                                            setShowDeleteCommentModal(true);
+                                          }}
+                                        >
+                                          🗑 Delete
+                                        </BsDropdown.Item>
+                                      </BsDropdown.Menu>
+                                    </BsDropdown>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+
+                            {/* Show more/less replies */}
+                            {comment.replies.length > MAX_REPLIES_SHOWN && (
+                              <div className="mt-2">
+                                <Button
+                                  variant="link"
+                                  size="sm"
+                                  className="ps-0"
+                                  onClick={() =>
+                                    setExpandedReplies((prev) => ({
+                                      ...prev,
+                                      [comment.id]: !prev[comment.id],
+                                    }))
+                                  }
+                                >
+                                  {expandedReplies[comment.id]
+                                    ? "Hide replies"
+                                    : `See ${comment.replies.length - MAX_REPLIES_SHOWN} more replies`}
+                                </Button>
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -706,7 +933,19 @@ const PostDetail = () => {
               try {
                 await axiosReq.delete(`/comments/${commentToDeleteId}/`);
                 setComments((prevComments) =>
-                  prevComments.filter((c) => c.id !== commentToDeleteId)
+                  prevComments
+                    .map((c) => {
+                      if (c.id === commentToDeleteId) {
+                        return null;
+                      }
+                
+                      const updatedReplies = c.replies?.filter((r) => r.id !== commentToDeleteId);
+                      return {
+                        ...c,
+                        replies: updatedReplies,
+                      };
+                    })
+                    .filter(Boolean)
                 );
                 setPost((prevPost) => ({
                   ...prevPost,

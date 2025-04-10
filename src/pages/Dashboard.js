@@ -120,12 +120,7 @@ const Dashboard = () => {
       <Row>
         {/* Left Sidebar - Dashboard Insights */}
         <Col md={3} className="d-none d-md-block">
-          <Card className="mb-4 shadow-sm sidebar-card">
-            <Card.Header className="bg-light fw-bold">📌 Dashboard Insights</Card.Header>
-            <Card.Body>
-              <DashboardInsights />
-            </Card.Body>
-          </Card>
+          <DashboardInsights />
         </Col>
 
         {/* Main Content - Posts Feed */}

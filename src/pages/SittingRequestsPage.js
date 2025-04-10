@@ -1,25 +1,25 @@
-// src/pages/SittingRequestsPage.js
 import React, { useEffect, useState } from "react";
-import { Card, Button, Modal, Spinner, Alert, Tabs, Tab } from "react-bootstrap";
+import { Row, Col, Card, Badge, Button, Spinner, Alert } from "react-bootstrap";
 import { axiosReq } from "../api/axios";
+import { useLocation } from "react-router-dom";
 
 const SittingRequestsPage = () => {
   const [sentRequests, setSentRequests] = useState([]);
-  const [incomingRequests, setIncomingRequests] = useState([]);
+  const [receivedRequests, setReceivedRequests] = useState([]);
   const [selectedRequest, setSelectedRequest] = useState(null);
-  const [showModal, setShowModal] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const location = useLocation();
+  const params = new URLSearchParams(location.search);
+  const focusRequestId = params.get("focus");
 
   const fetchRequests = async () => {
     try {
       const sentRes = await axiosReq.get("/posts/requests/sent/");
       const receivedRes = await axiosReq.get("/posts/requests/incoming/");
-
-      setSentRequests(Array.isArray(sentRes.data) ? sentRes.data : sentRes.data.results || []);
-      setIncomingRequests(Array.isArray(receivedRes.data) ? receivedRes.data : receivedRes.data.results || []);
+      setSentRequests(sentRes.data.results || sentRes.data);
+      setReceivedRequests(receivedRes.data.results || receivedRes.data);
     } catch (err) {
-      console.error("Error loading sitting requests", err);
       setError("Failed to load sitting requests.");
     } finally {
       setLoading(false);
@@ -30,11 +30,17 @@ const SittingRequestsPage = () => {
     fetchRequests();
   }, []);
 
+  useEffect(() => {
+    const all = [...sentRequests, ...receivedRequests];
+    const match = all.find((r) => r.id.toString() === focusRequestId);
+    if (match) setSelectedRequest(match);
+  }, [focusRequestId, sentRequests, receivedRequests]);
+
   const handleRequestAction = async (requestId, action) => {
     try {
-      await axiosReq.post(`posts/requests/manage/${requestId}/`, { status: action });
+      await axiosReq.post(`/posts/requests/manage/${requestId}/`, { status: action });
       fetchRequests();
-      setShowModal(false);
+      setSelectedRequest(null);
     } catch (err) {
       console.error(`Failed to ${action} request`, err);
     }
@@ -44,93 +50,89 @@ const SittingRequestsPage = () => {
     try {
       await axiosReq.delete(`posts/requests/${requestId}/`);
       fetchRequests();
-      setShowModal(false);
+      setSelectedRequest(null);
     } catch (err) {
       console.error("Failed to cancel request", err);
     }
   };
 
-  if (loading) return <Spinner animation="border" className="mt-4" />;
-  if (error) return <Alert variant="danger">{error}</Alert>;
+  const renderRequestCard = (req, type) => (
+    <Card
+      key={req.id}
+      className={`mb-2 shadow-sm pointer ${selectedRequest?.id === req.id ? "border-primary" : ""}`}
+      onClick={() => setSelectedRequest(req)}
+    >
+      <Card.Body>
+        <div className="d-flex justify-content-between align-items-center">
+          <div>
+            <span className="me-2">{type === "sent" ? "📤 Sent to" : "📥 From"}:</span>
+            <strong>{type === "sent" ? req.receiver_username : req.sender_username}</strong>
+            <br />
+            <small className="text-muted">Post: {req.post_title}</small>
+            <Badge bg="secondary" className="ms-2">{req.post_category}</Badge>
+          </div>
+          <Badge bg={req.status === "pending" ? "warning" : req.status === "accepted" ? "success" : "danger"}>
+            {req.status}
+          </Badge>
+        </div>
+      </Card.Body>
+    </Card>
+  );
 
   return (
     <div className="container mt-4">
       <h2 className="mb-4">🪑 Sitting Requests</h2>
-      <Tabs defaultActiveKey="received" className="mb-4">
-        <Tab eventKey="received" title="📥 Received">
-          {incomingRequests.length === 0 ? (
-            <Alert variant="info" className="mt-3">No received requests.</Alert>
-          ) : (
-            incomingRequests.map((req) => (
-              <Card key={req.id} className="mb-3 shadow-sm">
-                <Card.Body>
-                  <Card.Title>From: {req.sender_username}</Card.Title>
-                  <Card.Text>Status: {req.status}</Card.Text>
-                  <Button variant="primary" onClick={() => { setSelectedRequest(req); setShowModal(true); }}>
-                    View Details
-                  </Button>
-                </Card.Body>
-              </Card>
-            ))
-          )}
-        </Tab>
+      {error && <Alert variant="danger">{error}</Alert>}
+      {loading ? (
+        <Spinner animation="border" />
+      ) : (
+        <Row>
+          {/* Left Column - Combined List */}
+          <Col md={5}>
+            <h5 className="mb-3">📋 All Requests</h5>
+            {[...receivedRequests, ...sentRequests].map((req) =>
+              renderRequestCard(req, receivedRequests.includes(req) ? "received" : "sent")
+            )}
+          </Col>
 
-        <Tab eventKey="sent" title="📤 Sent">
-          {sentRequests.length === 0 ? (
-            <Alert variant="info" className="mt-3">No sent requests.</Alert>
-          ) : (
-            sentRequests.map((req) => (
-              <Card key={req.id} className="mb-3 shadow-sm">
+          {/* Right Column - Detail View */}
+          <Col md={7}>
+            {selectedRequest ? (
+              <Card className="shadow-sm">
+                <Card.Header className="fw-bold">Request Details</Card.Header>
                 <Card.Body>
-                  <Card.Title>To: {req.receiver_username}</Card.Title>
-                  <Card.Text>Status: {req.status}</Card.Text>
-                  <Button variant="primary" onClick={() => { setSelectedRequest(req); setShowModal(true); }}>
-                    View Details
-                  </Button>
-                </Card.Body>
-              </Card>
-            ))
-          )}
-        </Tab>
-      </Tabs>
-
-      <Modal show={showModal} onHide={() => setShowModal(false)}>
-        <Modal.Header closeButton>
-          <Modal.Title>Request Details</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          {selectedRequest && (
-            <>
-              <p><strong>From:</strong> {selectedRequest.sender_username}</p>
-              <p><strong>To:</strong> {selectedRequest.receiver_username}</p>
-              <p><strong>Status:</strong> {selectedRequest.status}</p>
-              <p><strong>Message:</strong> {selectedRequest.message}</p>
-              <p><strong>Created:</strong> {new Date(selectedRequest.created_at).toLocaleString()}</p>
-              {selectedRequest.status === "pending" && (
-                <div className="mt-3 d-flex gap-2">
-                  {incomingRequests.find((r) => r.id === selectedRequest.id) ? (
-                    <>
-                      <Button variant="success" onClick={() => handleRequestAction(selectedRequest.id, "accepted")}>
-                        ✅ Accept
-                      </Button>
-                      <Button variant="danger" onClick={() => handleRequestAction(selectedRequest.id, "declined")}>
-                        ❌ Decline
-                      </Button>
-                    </>
-                  ) : (
-                    <Button variant="outline-danger" onClick={() => handleCancelRequest(selectedRequest.id)}>
-                      ❌ Cancel Request
-                    </Button>
+                  <p><strong>From:</strong> {selectedRequest.sender_username}</p>
+                  <p><strong>To:</strong> {selectedRequest.receiver_username}</p>
+                  <p><strong>Post:</strong> {selectedRequest.post_title} <Badge bg="info">{selectedRequest.post_category}</Badge></p>
+                  <p><strong>Status:</strong> {selectedRequest.status}</p>
+                  <p><strong>Message:</strong> {selectedRequest.message}</p>
+                  <p><strong>Created:</strong> {new Date(selectedRequest.created_at).toLocaleString()}</p>
+                  {selectedRequest.status === "pending" && (
+                    <div className="mt-3 d-flex gap-2">
+                      {receivedRequests.find((r) => r.id === selectedRequest.id) ? (
+                        <>
+                          <Button variant="success" onClick={() => handleRequestAction(selectedRequest.id, "accepted")}>
+                            ✅ Accept
+                          </Button>
+                          <Button variant="danger" onClick={() => handleRequestAction(selectedRequest.id, "declined")}>
+                            ❌ Decline
+                          </Button>
+                        </>
+                      ) : (
+                        <Button variant="outline-danger" onClick={() => handleCancelRequest(selectedRequest.id)}>
+                          ❌ Cancel Request
+                        </Button>
+                      )}
+                    </div>
                   )}
-                </div>
-              )}
-            </>
-          )}
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowModal(false)}>Close</Button>
-        </Modal.Footer>
-      </Modal>
+                </Card.Body>
+              </Card>
+            ) : (
+              <Alert variant="info">Select a request to view details</Alert>
+            )}
+          </Col>
+        </Row>
+      )}
     </div>
   );
 };

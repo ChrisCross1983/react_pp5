@@ -1,74 +1,99 @@
-// src/components/DashboardInsights.js
-
 import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import Card from "react-bootstrap/Card";
 import Spinner from "react-bootstrap/Spinner";
 import ListGroup from "react-bootstrap/ListGroup";
-import Button from "react-bootstrap/Button";
 import { axiosReq } from "../api/axios";
+import classNames from "classnames";
 
 export default function DashboardInsights() {
-  const [notifications, setNotifications] = useState([]);
-  const [recentComments, setRecentComments] = useState([]);
+  const [activities, setActivities] = useState([]);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
+
 
   useEffect(() => {
-    const fetchOverview = async () => {
+    const fetchActivityFeed = async () => {
       try {
-        const res = await axiosReq.get("/notifications/overview/");
-        setNotifications(res.data.notifications ?? []);
-        setRecentComments(res.data.comments ?? []);
+        const response = await axiosReq.get("/notifications/all/");
+        console.log("🧪 Raw API Response:", response.data);
+  
+        const activityList = response.data?.results || [];
+        console.log("📦 Final Activities:", activityList);
+  
+        setActivities(activityList);
       } catch (err) {
-        console.error("Error loading dashboard overview", err);
+        console.error("❌ Error loading activity feed", err);
       } finally {
         setLoading(false);
       }
     };
-
-    fetchOverview();
+  
+    fetchActivityFeed();
   }, []);
+
+
+  const handleClick = async (n) => {
+    console.log("🔍 Comment Notification clicked", n);
+    console.log("🔗 post_id:", n.post_id);
+
+    try {
+      await axiosReq.post(`/notifications/${n.id}/mark-read/`);
+      console.log("🖱️ Clicked Notification:", n);
+
+      switch (n.type) {
+        case "request":
+          navigate(`/sitting-requests?focus=${n.sitting_request_id}`);
+          break;
+        case "comment":
+        case "like":
+          if (n.post_id) {
+            navigate(`/posts/${n.post_id}`);
+          }
+          break;
+        case "follow":
+          if (n.sender_profile_id) {
+            navigate(`/profiles/${n.sender_profile_id}`);
+          }
+          break;
+        default:
+          break;
+      }
+
+      setActivities((prev) =>
+        prev.map((item) =>
+          item.id === n.id ? { ...item, is_read: true } : item
+        )
+      );
+    } catch (err) {
+      console.error("Error handling activity click", err);
+    }
+  };
+
 
   return (
     <Card className="mb-4 shadow-sm sidebar-card">
-      <Card.Header className="bg-light fw-bold">📊 Dashboard Insights</Card.Header>
+      <Card.Header className="bg-light fw-bold">📌 Dashboard & Activity</Card.Header>
       <Card.Body>
         {loading ? (
           <Spinner animation="border" size="sm" />
+        ) : activities.length === 0 ? (
+          <p className="text-muted small">No recent activity.</p>
         ) : (
-          <>
-            {/* 📬 Notifications */}
-            <h6 className="fw-semibold mb-2">📬 Unread Notifications</h6>
-            <ListGroup variant="flush" className="mb-3">
-              {notifications.length === 0 ? (
-                <div className="text-muted small">No new notifications</div>
-              ) : (
-                notifications.map((n) => (
-                  <ListGroup.Item key={n.id} className="small">
-                    {n.message}
-                  </ListGroup.Item>
-                ))
-              )}
-            </ListGroup>
-
-            {/* 💬 Comments */}
-            <h6 className="fw-semibold mb-2">💬 Comments on your Posts</h6>
-            <ListGroup variant="flush">
-              {recentComments.length === 0 ? (
-                <div className="text-muted small">No recent comments</div>
-              ) : (
-                recentComments.map((c) => (
-                  <ListGroup.Item key={c.id} className="small">
-                    <strong>{c.content.slice(0, 60)}</strong>
-                    <div className="text-muted small">Post: {c.post_title}</div>
-                    <Link to={`/posts/${c.post_id}`} className="btn btn-link btn-sm px-0">
-                      ↪ Reply
-                    </Link>
-                  </ListGroup.Item>
-                ))
-              )}
-            </ListGroup>
-          </>
+          <ListGroup variant="flush">
+            {activities.map((n) => (
+              <ListGroup.Item
+                key={n.id}
+                className={classNames("small", "pointer", {
+                  "bg-light": !n.is_read,
+                })}
+                onClick={() => handleClick(n)}
+              >
+                <div><strong>{n.type.toUpperCase()}</strong>: {n.message}</div>
+                <div className="text-muted small">{new Date(n.created_at).toLocaleString()}</div>
+              </ListGroup.Item>
+            ))}
+          </ListGroup>
         )}
       </Card.Body>
     </Card>

@@ -184,7 +184,19 @@ code {
   font-size: 14px;
   line-height: 1.4;
   word-wrap: break-word;
+  overflow-wrap: anywhere;
   margin-bottom: 0;
+}
+
+.comment-avatar-sm {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.reply {
+  margin-top: 1rem;
 }
 
 /* Author Area */

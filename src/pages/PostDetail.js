@@ -23,7 +23,7 @@ const PostDetail = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [comments, setComments] = useState([]);
-  const [commentsPage, setCommentsPage] = useState(1);
+  const [commentsPage, setCommentsPage] = useState(0);
   const [hasMoreComments, setHasMoreComments] = useState(true);
   const [newComment, setNewComment] = useState("");
   const [editCommentId, setEditCommentId] = useState(null);
@@ -47,10 +47,14 @@ const PostDetail = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [isSavingComment, setIsSavingComment] = useState(false);
   const [isLoadingComments, setIsLoadingComments] = useState(false);
+  const [isPostingComment, setIsPostingComment] = useState(false);
   const [expandedReplies, setExpandedReplies] = useState({});
   const MAX_REPLIES_SHOWN = 3;
+  const loadedPages = useRef(new Set());
   const commentInputRef = useRef(null);
   const commentRefs = useRef({});
+  const query = new URLSearchParams(window.location.search);
+  const scrollToCommentId = query.get("comment");
 
 
   // Button functionality
@@ -63,14 +67,19 @@ const PostDetail = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+
   // Fetch Post Data
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       try {
         const response = await axiosReq.get(`posts/${postId}/`);
-        console.log("📌 API Response Data:", response.data);
         setPost(response.data);
+
+        if (commentsPage === 0 && !loadedPages.current.has(1)) {
+          setCommentsPage(1);
+        }
+
       } catch (err) {
         console.error(
           "❌ Error fetching post:",
@@ -83,6 +92,7 @@ const PostDetail = () => {
 
     fetchData();
   }, [postId]);
+
 
   useEffect(() => {
     if (post) {
@@ -105,71 +115,96 @@ const PostDetail = () => {
     general: "general",
   };
 
-  // Fetch Comments
+
+  // Reset when postId changes
   useEffect(() => {
-    const loadComments = async () => {
-      if (!hasMoreComments || isLoadingComments) return;
-  
-      setIsLoadingComments(true);
-      try {
-        const res = await axiosReq.get(`/comments/?post=${postId}&page=${commentsPage}`);
-        setComments((prev) => [...prev, ...res.data.results]);
-        setHasMoreComments(Boolean(res.data.next));
-
-        // Read comment ID from URL and reload
-        const query = new URLSearchParams(window.location.search);
-        const commentId = query.get("comment");
-        if (commentId) {
-          setTimeout(() => {
-            const el = commentRefs.current[commentId];
-            if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
-          }, 500);
-        }
-
-      } catch (err) {
-        console.error("❌ Error loading comments:", err);
-      } finally {
-        setIsLoadingComments(false);
-      }
-    };
-  
-    loadComments();
-  }, [commentsPage, postId]);
+    setComments([]);
+    setCommentsPage(0);
+    setHasMoreComments(true);
+    loadedPages.current = new Set();
+  }, [postId]);
 
 
-  // Scroll Handler
+  // Trigger initial load only after post is available
   useEffect(() => {
-    const handleScroll = () => {
-      const bottomReached = window.innerHeight + window.scrollY >= document.body.offsetHeight - 200;
-      if (bottomReached && hasMoreComments && !isLoadingComments) {
-        setCommentsPage((prevPage) => prevPage + 1);
-      }
-    };
-  
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, [hasMoreComments, isLoadingComments]);
-
-
-  useEffect(() => {
-    if (post && comments.length !== post.comments_count) {
-      setPost((prevPost) => ({
-        ...prevPost,
-        comments_count: comments.length,
-      }));
+    if (post && commentsPage === 0) {
+      console.log("🚀 Trigger initial page load (1)");
+      setCommentsPage(1);
     }
-  }, [comments, post]);
-  
+  }, [post, commentsPage]);
 
-  // Debugging Logs
-  console.log("📌 Post Data:", post);
-  console.log("📌 Edit Modal State:", showEditModal);
-  console.log("📌 Edit Modal Values:", {
-    editTitle,
-    editContent,
-    editCategory,
-    editImage,
-  });
+
+  // Load each page of comments
+  useEffect(() => {
+    console.log("📥 START PageLoader");
+    console.log("👉 postId:", postId);
+    console.log("👉 post:", post);
+    console.log("👉 commentsPage:", commentsPage);
+    console.log("👉 isLoadingComments:", isLoadingComments);
+    console.log("👉 loadedPages:", Array.from(loadedPages.current));
+
+    if (!postId || !post || isLoadingComments || loadedPages.current.has(commentsPage)) return;
+    if (commentsPage === 0) return;    
+
+    setIsLoadingComments(true);
+
+    axiosReq
+      .get(`/comments/?post=${postId}&page=${commentsPage}`)
+      .then((res) => {
+        const newComments = res.data.results || [];
+        console.log(`📦 Page ${commentsPage} loaded: ${newComments.length} comments`);
+  
+        if (newComments.length === 0) {
+          setHasMoreComments(false);
+          return;
+        }
+  
+        setComments((prev) => {
+          const seen = new Set(prev.map((c) => c.id));
+          const unique = newComments.filter((c) => !seen.has(c.id));
+          return [...prev, ...unique];
+        });
+
+        loadedPages.current.add(commentsPage);
+
+        if (!res.data.next) {
+          console.log("✅ No next page – setting hasMoreComments = false");
+          setHasMoreComments(false);
+        }
+      })
+      .catch((err) => {
+        if (err.response?.status === 404) {
+          console.warn("🛑 Invalid page – setting hasMoreComments = false");
+          setHasMoreComments(false);
+          loadedPages.current.add(commentsPage);
+        } else {
+          console.error("❌ Error loading comments:", err);
+        }
+      })
+      .finally(() => {
+        setIsLoadingComments(false);
+      });
+  }, [commentsPage, post, postId, isLoadingComments]);   
+
+
+  useEffect(() => {
+    if (!scrollToCommentId) return;
+  
+    const interval = setInterval(() => {
+      const el = commentRefs.current[scrollToCommentId];
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+        el.classList.add("highlight-comment");
+        setTimeout(() => {
+          el.classList.remove("highlight-comment");
+        }, 1500);
+        clearInterval(interval);
+      }
+    }, 300);
+  
+    return () => clearInterval(interval);
+  }, [scrollToCommentId, comments]);
+
 
   //  Error handling: If `post === null`
   if (loading) {
@@ -188,6 +223,7 @@ const PostDetail = () => {
       </Container>
     );
   }
+
 
   const handleLike = async () => {
     setIsLiking(true);
@@ -255,7 +291,6 @@ const PostDetail = () => {
   
       toast.success("✅ Post updated successfully!");
     } catch (err) {
-      console.error("❌ Error editing post:", err.response?.data || err.message);
       toast.error("❌ Failed to update post. Please try again.");
     } finally {
       setIsSaving(false);
@@ -271,13 +306,13 @@ const PostDetail = () => {
       navigate("/");
     } catch (err) {
       toast.error("❌ Failed to delete post.");
-      console.error("❌ Error deleting post:", err);
     }
   };
 
   const handleCommentSubmit = async (e) => {
     e.preventDefault();
-    if (!newComment.trim()) return;
+    if (!newComment.trim() || isPostingComment) return;
+    setIsPostingComment(true);
 
     try {
       const response = await axiosReq.post(
@@ -286,8 +321,7 @@ const PostDetail = () => {
         { headers: { "X-CSRFToken": localStorage.getItem("csrfToken") } }
       );
 
-      console.log("✅ New comment saved succesfully:", response.data);
-
+      setIsPostingComment(false);
       setComments((prevComments) => [response.data, ...prevComments]);
       setPost((prev) => ({
         ...prev,
@@ -295,6 +329,7 @@ const PostDetail = () => {
       }));      
       setNewComment("");
       setIsSubmitVisible(false);
+      toast.success("✅ Comment posted!");
     } catch (err) {
       console.error(
         "❌ Error while saving comment:",
@@ -346,10 +381,6 @@ const PostDetail = () => {
       setShowCommentEditModal(false);
       toast.success("✅ Comment updated successfully!");
     } catch (err) {
-      console.error(
-        "❌ Error updating comment:",
-        err.response?.data || err.message
-      );
       toast.error("❌ Failed to update comment.");
     } finally {
       setIsSavingComment(false);
@@ -384,10 +415,14 @@ const PostDetail = () => {
           return c;
         })
       );
+
+      setPost((prev) => ({
+        ...prev,
+        comments_count: prev.comments_count + 1,
+      }));
   
       toast.success("✅ Reply posted!");
     } catch (err) {
-      console.error("❌ Failed to reply:", err);
       toast.error("❌ Failed to reply.");
     }
   };
@@ -432,7 +467,6 @@ const PostDetail = () => {
       );
     } catch (err) {
       toast.error("❌ Like failed");
-      console.error("Like error:", err);
     }
   };  
   
@@ -615,6 +649,7 @@ const PostDetail = () => {
                         type="submit"
                         variant="primary"
                         className="comment-submit-btn"
+                        disabled={isPostingComment}
                         style={{
                           opacity: 1,
                           transition: "opacity 0.3s ease-in-out",
@@ -815,6 +850,24 @@ const PostDetail = () => {
                       </div>
                     </div>
                   ))}
+
+                  {/* More Button comments */}
+                  {hasMoreComments && !isLoadingComments && (
+                      <div className="text-center mt-3">
+                        <Button
+                          variant="outline-primary"
+                          onClick={() => setCommentsPage((prev) => prev + 1)}
+                        >
+                          Load more comments
+                        </Button>
+                      </div>
+                    )}
+
+                    {isLoadingComments && (
+                      <div className="text-center mt-2 text-muted">
+                        Loading more comments...
+                      </div>
+                    )}
                 </Card>
               </Col>
             </Row>
@@ -940,17 +993,21 @@ const PostDetail = () => {
                       }
                 
                       const updatedReplies = c.replies?.filter((r) => r.id !== commentToDeleteId);
-                      return {
-                        ...c,
-                        replies: updatedReplies,
-                      };
+                      return { ...c, replies: updatedReplies };
                     })
                     .filter(Boolean)
                 );
+                const deletedIsParent = comments.some(c => c.id === commentToDeleteId);
+                const deletedReplyCount = deletedIsParent
+                  ? comments.find(c => c.id === commentToDeleteId)?.replies?.length || 0
+                  : 0;
+
+                const totalToDelete = 1 + deletedReplyCount;
+
                 setPost((prevPost) => ({
                   ...prevPost,
-                  comments_count: prevPost.comments_count - 1,
-                }));                
+                  comments_count: prevPost.comments_count - totalToDelete,
+                }));
                 toast.success("✅ Comment deleted successfully!");
               } catch (err) {
                 toast.error("❌ Failed to delete comment.");

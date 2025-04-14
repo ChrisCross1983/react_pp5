@@ -21,9 +21,19 @@ code {
 }
 
 .highlight-comment {
-  outline: 2px solid #007bff;
-  box-shadow: 0 0 10px rgba(0, 123, 255, 0.5);
-  transition: box-shadow 0.3s ease-in-out;
+  animation: flashHighlight 1.2s ease;
+  background-color: rgba(255, 249, 196, 0.8);
+  border-left: 3px solid #ffc107;
+  padding-left: 0.75rem;
+}
+
+@keyframes flashHighlight {
+  from {
+    background-color: rgba(255, 249, 196, 0.8);
+  }
+  to {
+    background-color: transparent;
+  }
 }
 
 /* Standard-Comments */

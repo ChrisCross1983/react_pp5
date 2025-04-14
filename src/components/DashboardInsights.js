@@ -80,20 +80,22 @@ export default function DashboardInsights() {
         ) : activities.length === 0 ? (
           <p className="text-muted small">No recent activity.</p>
         ) : (
-          <ListGroup variant="flush">
-            {activities.map((n) => (
-              <ListGroup.Item
-                key={n.id}
-                className={classNames("small", "pointer", {
-                  "bg-light": !n.is_read,
-                })}
-                onClick={() => handleClick(n)}
-              >
-                <div><strong>{n.type.toUpperCase()}</strong>: {n.message}</div>
-                <div className="text-muted small">{new Date(n.created_at).toLocaleString()}</div>
-              </ListGroup.Item>
-            ))}
-          </ListGroup>
+          <div className="notifications-scroll-container">
+            <ListGroup variant="flush">
+              {activities.map((n) => (
+                <ListGroup.Item
+                  key={n.id}
+                  className={classNames("small", "pointer", {
+                    "bg-light": !n.is_read,
+                  })}
+                  onClick={() => handleClick(n)}
+                >
+                  <div><strong>{n.type.toUpperCase()}</strong>: {n.message}</div>
+                  <div className="text-muted small">{new Date(n.created_at).toLocaleString()}</div>
+                </ListGroup.Item>
+              ))}
+            </ListGroup>
+          </div>
         )}
       </Card.Body>
     </Card>

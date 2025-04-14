@@ -63,32 +63,11 @@ const Dashboard = () => {
         const fetchedPosts = response.data?.results ?? [];
 
         console.log("📦 Raw fetchedPosts:", fetchedPosts);
-  
-        const updatedPosts = await Promise.all(
-          fetchedPosts.map(async (post) => {
-            try {
-              const commentResponse = await axiosReq.get(
-                `comments/?post=${post.id}`
-              );
-              return {
-                ...post,
-                is_owner: post.author?.toLowerCase() === currentUser,
-                comments_count: commentResponse.data.count,
-                comments: commentResponse.data.results.map((comment) => ({
-                  ...comment,
-                  is_owner:
-                    comment.author?.toLowerCase?.() === currentUser,
-                })),
-              };
-            } catch (err) {
-              console.error(
-                `❌ Error loading comments for post ${post.id}:`,
-                err
-              );
-              return post;
-            }
-          })
-        );
+
+        const updatedPosts = fetchedPosts.map((post) => ({
+          ...post,
+          is_owner: post.author?.toLowerCase() === currentUser,
+        }));        
 
         console.log("🛠️ Processed updatedPosts:", updatedPosts);
 
@@ -101,7 +80,7 @@ const Dashboard = () => {
         setLoading(false);
       }
     };
-  
+
     setTimeout(() => {
       fetchPosts();
     }, 300);

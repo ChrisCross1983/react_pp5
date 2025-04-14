@@ -11,37 +11,28 @@ import {
   Dropdown as BsDropdown,
   Modal,
 } from "react-bootstrap";
-import { motion, AnimatePresence } from "framer-motion";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { axiosReq } from "../api/axios";
 import { formatDistanceToNow } from "date-fns";
 import { toast } from "react-toastify";
 import { Badge as BsBadge } from "react-bootstrap";
 
 const Posts = ({ posts, loading, error, setPosts }) => {
-  const [selectedPost, setSelectedPost] = useState(null);
-  const [newComment, setNewComment] = useState("");
-  const [showCommentEditModal, setShowCommentEditModal] = useState(false);
-  const [showDeleteCommentModal, setShowDeleteCommentModal] = useState(false);
-  const [commentToDeleteId, setCommentToDeleteId] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [editCommentContent, setEditCommentContent] = useState("");
-  const [editCommentId, setEditCommentId] = useState(null);
   const [editImage, setEditImage] = useState(null);
   const [editTitle, setEditTitle] = useState("");
   const [editCategory, setEditCategory] = useState("general");
   const [editContent, setEditContent] = useState("");
   const [showEditModal, setShowEditModal] = useState(false);
   const [postId, setPostId] = useState(null);
-  const [isSubmitVisible, setIsSubmitVisible] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
-  const [isSavingComment, setIsSavingComment] = useState(false);
   const [showSittingModal, setShowSittingModal] = useState(false);
   const [sittingMessage, setSittingMessage] = useState("");
   const [sittingPost, setSittingPost] = useState(null);
   const [alreadyRequestedPostIds, setAlreadyRequestedPostIds] = useState([]);
-  const closeOverlay = () => setSelectedPost(null);
+  const navigate = useNavigate();
+
 
   useEffect(() => {
     const storedUser = localStorage.getItem("username");
@@ -50,32 +41,17 @@ const Posts = ({ posts, loading, error, setPosts }) => {
     }
   }, []);
 
-  useEffect(() => {
-    const handleOutsideClick = (e) => {
-      if (
-        selectedPost &&
-        !e.target.closest(".comment-container") &&
-        !e.target.closest(".comment-button") &&
-        !e.target.closest(".modal")
-      ) {
-        setSelectedPost(null);
-      }
-    };
-  
-    document.addEventListener("mousedown", handleOutsideClick);
-    return () => {
-      document.removeEventListener("mousedown", handleOutsideClick);
-    };
-  }, [selectedPost]);
 
   useEffect(() => {
     const fetchSentRequests = async () => {
       try {
         const response = await axiosReq.get("/posts/requests/sent/");
         console.log("🚀 Sent Requests Response:", response.data);
-        const postIds = Array.isArray(response.data)
-          ? response.data.map((req) => req.post)
+
+        const postIds = Array.isArray(response.data?.results)
+          ? response.data.results.map((req) => req.post)
           : [];
+
         setAlreadyRequestedPostIds(postIds);
       } catch (err) {
         console.error("❌ Error fetching sent requests", err);
@@ -84,57 +60,6 @@ const Posts = ({ posts, loading, error, setPosts }) => {
     fetchSentRequests();
   }, []);
 
-
-  const toggleComments = async (post) => {
-    if (!currentUser) {
-      console.warn("⏳ Waiting for currentUser to be set...");
-      return;
-    }
-
-    try {
-      console.log(`🔄 Loading comments for post ${post.id}...`);
-
-      let allComments = [];
-      let nextPageUrl = `/comments/?post=${post.id}`;
-
-      while (nextPageUrl) {
-        const response = await axiosReq.get(nextPageUrl);
-        allComments = [...allComments, ...response.data.results];
-        nextPageUrl = response.data.next;
-      }
-
-      const fullComments = allComments.map((comment) => ({
-        ...comment,
-        is_owner: comment.author?.toLowerCase?.() === currentUser,
-      }));
-
-      console.log(
-        `✅ Loaded ${fullComments.length} comments for post ${post.id}`
-      );
-
-      setSelectedPost((prev) => ({
-        ...prev,
-        id: post.id,
-        comments: fullComments,
-        comments_count: prev?.comments_count ?? post.comments_count,
-      }));
-
-      setPosts((prevPosts) =>
-        prevPosts.map((p) =>
-          p.id === post.id
-            ? {
-                ...p,
-                comments: fullComments,
-                comments_count: post.comments_count,
-              }
-            : p
-        )
-      );
-
-    } catch (err) {
-      console.error("❌ Error loading comments:", err);
-    }
-  };
 
   const handleLike = async (post) => {
     try {
@@ -160,111 +85,6 @@ const Posts = ({ posts, loading, error, setPosts }) => {
     }
   };
 
-  const handleCommentSubmit = async (e) => {
-    e.preventDefault();
-
-    if (!newComment.trim()) {
-      console.error("❌ Cannot submit comment: Comment text is empty!");
-      return;
-    }
-
-    if (!selectedPost || !selectedPost.id) {
-      console.error(
-        "❌ Cannot submit comment: selectedPost is missing or has no ID!"
-      );
-      return;
-    }
-
-    try {
-      const response = await axiosReq.post(`/comments/`,
-        { content: newComment, post: selectedPost.id }
-      );
-
-      console.log("✅ New comment saved successfully:", response.data);
-
-      const newCommentData = {
-        ...response.data,
-        is_owner: response.data.author?.toLowerCase() === currentUser,
-      };
-
-      setSelectedPost((prev) => ({
-        ...prev,
-        comments: [newCommentData, ...prev.comments],
-      }));
-
-      setPosts((prevPosts) =>
-        prevPosts.map((p) =>
-          p.id === selectedPost.id
-            ? {
-                ...p,
-                comments: [newCommentData, ...p.comments],
-                comments_count: (p.comments_count ?? 0) + 1,
-              }
-            : p
-        )
-      );
-
-      setNewComment("");
-      setIsSubmitVisible(false);
-    } catch (err) {
-      console.error(
-        "❌ Error saving comment:",
-        err.response?.data || err.message
-      );
-    }
-  };
-
-  const handleEditComment = (comment) => {
-    if (!comment || !comment.id) {
-      console.error("❌ Cannot edit comment: Missing comment or ID!");
-      return;
-    }
-
-    console.log(`✏️ Editing comment ${comment.id}`);
-    setEditCommentId(comment.id);
-    setEditCommentContent(comment.content);
-    setShowCommentEditModal(true);
-  };
-
-  const handleSaveEditComment = async () => {
-    if (!editCommentId || !selectedPost?.id) return;
-    setIsSavingComment(true);
-  
-    try {
-      const response = await axiosReq.put(`/comments/${editCommentId}/`,
-        { content: editCommentContent, post: selectedPost.id },
-        {
-          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-        }
-      );
-  
-      setSelectedPost((prev) => ({
-        ...prev,
-        comments: prev.comments.map((c) =>
-          c.id === editCommentId
-            ? {
-                ...c,
-                content: response.data.content,
-                updated_at: response.data.updated_at,
-                is_owner:
-                  response.data.author.toLowerCase() === currentUser,
-              }
-            : c
-        ),
-      }));
-
-      setShowCommentEditModal(false);
-      toast.success("✅ Comment updated successfully!");
-    } catch (err) {
-      console.error(
-        "❌ Error updating comment:",
-        err.response?.data || err.message
-      );
-      toast.error("❌ Failed to update comment.");
-    } finally {
-      setIsSavingComment(false);
-    }
-  };  
 
   const handleEditPost = (post) => {
     setEditTitle(post.title || "");
@@ -322,7 +142,15 @@ const Posts = ({ posts, loading, error, setPosts }) => {
   };
 
   const handleSittingRequestSubmit = async (postId) => {
-    if (!sittingPost?.id) return;
+    if (!sittingPost?.id) {
+      toast.error("❌ No post selected for request.");
+      return;
+    }
+
+    if (alreadyRequestedPostIds.includes(sittingPost.id)) {
+      toast.info("🛑 Request already sent. No duplicate allowed.");
+      return;
+    }
 
     console.log("📨 Submitting request to", `/posts/${postId}/request/`, {
       post: postId,
@@ -334,11 +162,19 @@ const Posts = ({ posts, loading, error, setPosts }) => {
         post: postId,
         message: sittingMessage,
       });
+
       toast.success("✅ Request sent successfully!");
-      setAlreadyRequestedPostIds((prev) => [...prev, sittingPost.id]);
+
+      setAlreadyRequestedPostIds((prev) => {
+        const newSet = new Set(prev);
+        newSet.add(sittingPost.id);
+        return Array.from(newSet);
+      });
     } catch (err) {
       console.error("❌ Error sending request", err);
-      toast.error("❌ Failed to send request.");
+
+      const detail = err.response?.data?.detail || "Failed to send request.";
+      toast.error(`❌ ${detail}`);
     } finally {
       setSittingMessage("");
       setShowSittingModal(false);
@@ -451,25 +287,65 @@ const Posts = ({ posts, loading, error, setPosts }) => {
                     </Card.Subtitle>
                     <Card.Text>{post.description}</Card.Text>
                     <div className="d-flex justify-content-between align-items-center mt-3 flex-wrap gap-2">
-                      <Button as={Link} to={`/posts/${post.id}/`} variant="primary">
-                        View Details
-                      </Button>
-
+                    <Button variant="primary" onClick={() => navigate(`/posts/${post.id}/`)}>
+                      View Details
+                    </Button>
                       {(post.category === "offer" || post.category === "search") && !post.is_owner && (
-                        alreadyRequestedPostIds.includes(post.id) ? (
-                          <span className="badge bg-secondary">🕓 Request Sent</span>
-                        ) : (
-                          <Button
-                            variant="outline-primary"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setSittingPost(post);
-                              setShowSittingModal(true);
-                            }}
-                          >
-                            🙋 {post.category === "offer" ? "Request Sitting" : "Offer Sitting"}
-                          </Button>
-                        )
+                        <Button
+                          variant={
+                            alreadyRequestedPostIds.includes(post.id)
+                              ? "secondary"
+                              : "outline-primary"
+                          }
+                          title={
+                            alreadyRequestedPostIds.includes(post.id)
+                              ? "Request already sent"
+                              : ""
+                          }
+                          onClick={(e) => {
+                            e.stopPropagation();
+                        
+                            const alreadyRequested = alreadyRequestedPostIds.includes(post.id);
+                            console.log("📌 Requested postIds:", alreadyRequestedPostIds);
+                            console.log("🔎 Checking post:", post.id, "| Already requested:", alreadyRequested);
+                        
+                            if (alreadyRequested) {
+                              toast.info(
+                                <>
+                                  🕓 You already sent a request.{" "}
+                                  <span
+                                    onClick={() =>
+                                      navigate(`/sitting-requests?focus=${post.id}`)
+                                    }
+                                    style={{
+                                      textDecoration: "underline",
+                                      cursor: "pointer",
+                                      color: "lightblue"
+                                    }}
+                                  >
+                                    View it here
+                                  </span>
+                                </>,
+                                { autoClose: 6000 }
+                              );
+                              return;
+                            }
+                        
+                            setSittingPost(post);
+                            setShowSittingModal(true);
+                          }}
+                          style={
+                            alreadyRequestedPostIds.includes(post.id)
+                              ? {
+                                  pointerEvents: "auto",
+                                  opacity: 0.6,
+                                  cursor: "not-allowed",
+                                }
+                              : {}
+                          }
+                        >
+                          🙋 {post.category === "offer" ? "Request Sitting" : "Offer Sitting"}
+                        </Button>
                       )}
                     </div>
 
@@ -485,9 +361,9 @@ const Posts = ({ posts, loading, error, setPosts }) => {
                       </button>
                       <button
                         className="comment-button"
-                        onClick={() => toggleComments(post)}
+                        onClick={() => navigate(`/posts/${post.id}/`)}
                       >
-                        💬 {post.comments_count ?? post.comments.length}
+                        💬 {post.comments_count}
                       </button>
                     </div>
                   </Card.Body>
@@ -495,152 +371,6 @@ const Posts = ({ posts, loading, error, setPosts }) => {
               </Col>
             ))}
           </Row>
-
-          {/* Comment section with swipe up */}
-          <AnimatePresence>
-            {selectedPost && (
-              <motion.div
-                role="dialog"
-                aria-modal="true"
-                initial={{ y: "100%", x: "-50%" }}
-                animate={{ y: "0%", x: "-50%" }}
-                exit={{ y: "100%", x: "-50%" }}
-                transition={{ duration: 0.5, ease: "easeInOut" }}
-                className="comment-overlay"
-                onClick={(e) => {
-                  if (e.target === e.currentTarget) closeOverlay();
-                }}
-              >
-                <div
-                  className="comment-container"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <button
-                    className="comment-close-btn"
-                    onClick={() => setSelectedPost(null)}
-                  >
-                    ✖
-                  </button>
-                  <h5 className="text-center">💬 Comments</h5>
-
-                  {/* Comment Input Field */}
-                  <Form
-                    className="comment-input"
-                    onSubmit={handleCommentSubmit}
-                  >
-                    <Form.Control
-                      as="textarea"
-                      rows={1}
-                      placeholder="Write a comment..."
-                      value={newComment}
-                      onChange={(e) => {
-                        setNewComment(e.target.value);
-                        setIsSubmitVisible(e.target.value.trim().length > 0);
-                      }}
-                      onInput={handleTextareaResize}
-                      style={{
-                        resize: "none",
-                        overflowY: "hidden",
-                        minHeight: "40px",
-                      }}
-                    />
-                    {isSubmitVisible && (
-                      <Button
-                        type="submit"
-                        variant="primary"
-                        className="comment-submit-btn"
-                        style={{
-                          opacity: 1,
-                          transition: "opacity 0.3s ease-in-out",
-                        }}
-                      >
-                        ➤
-                      </Button>
-                    )}
-                  </Form>
-
-                  {/* Comments List */}
-                  <div className="comment-list">
-                    {selectedPost.comments.length > 0 ? (
-                      selectedPost?.comments.map((comment) => (
-                        <div
-                          key={comment.id}
-                          className={`comment ${
-                            comment.is_owner ? "comment-own" : ""
-                          }`}
-                        >
-                          <div className="comment-header">
-                            <div className="comment-info">
-                              <img
-                                src={
-                                  comment.author_image ||
-                                  "https://res.cloudinary.com/daj7vkzdw/image/upload/v1737570810/default_profile_uehpos.jpg"
-                                }
-                                alt="Profile"
-                                className="comment-avatar"
-                              />
-                              <div className="comment-meta">
-                                <strong>{comment.author}</strong>
-                                <p className="text-muted small">
-                                  {comment?.updated_at && comment?.created_at ? (
-                                    !isNaN(new Date(comment.updated_at)) &&
-                                    !isNaN(new Date(comment.created_at)) &&
-                                    new Date(comment.updated_at).toISOString().slice(0, 19) !==
-                                      new Date(comment.created_at).toISOString().slice(0, 19)
-                                      ? `Updated ${formatDistanceToNow(new Date(comment.updated_at), {
-                                          addSuffix: true,
-                                        })}`
-                                      : `Posted ${formatDistanceToNow(new Date(comment.created_at), {
-                                          addSuffix: true,
-                                        })}`
-                                  ) : (
-                                    "Unknown time"
-                                  )}
-                                </p>
-                              </div>
-                            </div>
-
-                            {/* 3 Point Menu for own comments */}
-                            {comment?.is_owner && (
-                              <BsDropdown className="comment-options">
-                                <BsDropdown.Toggle
-                                  as="button"
-                                  className="comment-options-btn"
-                                >
-                                  ⋮
-                                </BsDropdown.Toggle>
-                                <BsDropdown.Menu align="end">
-                                  <BsDropdown.Item
-                                    onClick={() => handleEditComment(comment)}
-                                  >
-                                    ✏️ Edit
-                                  </BsDropdown.Item>
-                                  <BsDropdown.Item
-                                    onClick={() => {
-                                      setCommentToDeleteId(comment.id);
-                                      setShowDeleteCommentModal(true);
-                                    }}
-                                    className="text-danger"
-                                  >
-                                    🗑 Delete
-                                  </BsDropdown.Item>
-                                </BsDropdown.Menu>
-                              </BsDropdown>
-                            )}
-                          </div>
-                          <div className="comment-body">
-                            <p className="comment-content">{comment.content}</p>
-                          </div>
-                        </div>
-                      ))
-                    ) : (
-                      <p className="text-muted text-center">No comments yet.</p>
-                    )}
-                  </div>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
         </>
       )}
 
@@ -701,39 +431,6 @@ const Posts = ({ posts, loading, error, setPosts }) => {
         </Modal>
       )}
 
-      {/* Edit Comment Modal */}
-      <Modal
-        show={showCommentEditModal}
-        onHide={() => setShowCommentEditModal(false)}
-      >
-        <Modal.Header closeButton>
-          <Modal.Title>Edit Comment</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <Form.Control
-            as="textarea"
-            rows={3}
-            value={editCommentContent}
-            onChange={(e) => setEditCommentContent(e.target.value)}
-          />
-        </Modal.Body>
-        <Modal.Footer>
-          <Button
-            variant="secondary"
-            onClick={() => setShowCommentEditModal(false)}
-          >
-            Cancel
-          </Button>
-          <Button
-            variant="primary"
-            onClick={handleSaveEditComment}
-            disabled={isSavingComment}
-          >
-            {isSavingComment ? "Saving..." : "Save Changes"}
-          </Button>
-        </Modal.Footer>
-      </Modal>
-
       {/* Delete Post Modal */}
       <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)}>
         <Modal.Header closeButton>
@@ -763,98 +460,52 @@ const Posts = ({ posts, loading, error, setPosts }) => {
         </Modal.Footer>
       </Modal>
 
-      {/* Delete Comment Modal */}
-      <Modal
-        show={showDeleteCommentModal}
-        onHide={() => setShowDeleteCommentModal(false)}
-      >
-        <Modal.Header closeButton>
-          <Modal.Title>Confirm Comment Deletion</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          Are you sure you want to delete this comment?
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowDeleteCommentModal(false)}>
-            Cancel
-          </Button>
-          <Button
-            variant="danger"
-            onClick={async () => {
-              try {
-                await axiosReq.delete(`/comments/${commentToDeleteId}/`);
-                setSelectedPost((prev) => ({
-                  ...prev,
-                  comments: prev.comments.filter((c) => c.id !== commentToDeleteId),
-                }));
-
-                if (selectedPost?.id) {
-                  setPosts((prevPosts) =>
-                    prevPosts.map((p) =>
-                      p.id === selectedPost.id
-                        ? {
-                            ...p,
-                            comments: p.comments.filter((c) => c.id !== commentToDeleteId),
-                            comments_count: (p.comments_count ?? 1) - 1,
-                          }
-                        : p
-                    )
-                  );
-                }
-
-                toast.success("✅ Comment deleted successfully!");
-              } catch (err) {
-                console.error("❌ Error deleting comment:", err);
-                toast.error("❌ Failed to delete comment.");
-              } finally {
-                setShowDeleteCommentModal(false);
-              }
-            }}
-          >
-            Delete
-          </Button>
-        </Modal.Footer>
-      </Modal>
-
       {/* Sitting Request Modal */}
-      <Modal
-        show={showSittingModal}
-        onHide={() => {
-          setShowSittingModal(false);
-          setSittingPost(null);
-          setSittingMessage("");
-        }}
-        centered
-      >
-        <Modal.Header closeButton>
-          <Modal.Title>🙋 Sitting Request</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <Form>
-            <Form.Group controlId="sittingRequestMessage">
-              <Form.Label>Optional message:</Form.Label>
-              <Form.Control
-                as="textarea"
-                rows={3}
-                value={sittingMessage}
-                onChange={(e) => setSittingMessage(e.target.value)}
-                placeholder="Write something for the receiver..."
-              />
-            </Form.Group>
-          </Form>
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowSittingModal(false)}>
-            Cancel
-          </Button>
-          <Button
-            variant="primary"
-            onClick={() => handleSittingRequestSubmit(sittingPost.id)}
-          >
-            Send Request
-          </Button>
-        </Modal.Footer>
-      </Modal>
+      {showSittingModal && sittingPost && (
+        <Modal
+          show={showSittingModal}
+          onHide={() => {
+            setShowSittingModal(false);
+            setSittingPost(null);
+            setSittingMessage("");
+          }}
+          centered
+        >
+          <Modal.Header closeButton>
+            <Modal.Title>🙋 Sitting Request</Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            <Form>
+              <Form.Group controlId="sittingRequestMessage">
+                <Form.Label>Optional message:</Form.Label>
+                <Form.Control
+                  as="textarea"
+                  rows={3}
+                  value={sittingMessage}
+                  onChange={(e) => setSittingMessage(e.target.value)}
+                  placeholder="Write something for the receiver..."
+                />
+              </Form.Group>
+            </Form>
+          </Modal.Body>
+          <Modal.Footer>
+            <Button variant="secondary" onClick={() => setShowSittingModal(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                if (!sittingPost) {
+                  toast.error("❌ No valid post for request.");
+                  return;
+                }
+                handleSittingRequestSubmit(sittingPost.id);
+              }}
+            >
+              Send Request
+            </Button>
+          </Modal.Footer>
+        </Modal>
+      )}
     </Container>
   );
 };

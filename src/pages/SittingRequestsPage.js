@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Row, Col, Card, Badge, Button, Spinner, Alert } from "react-bootstrap";
 import { axiosReq } from "../api/axios";
 import { useLocation } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 
 const SittingRequestsPage = () => {
   const [sentRequests, setSentRequests] = useState([]);
@@ -12,49 +13,61 @@ const SittingRequestsPage = () => {
   const location = useLocation();
   const params = new URLSearchParams(location.search);
   const focusRequestId = params.get("focus");
+  const [searchParams] = useSearchParams();
+  const focusId = searchParams.get("focus");
 
-  const fetchRequests = async () => {
+  const loadRequests = async () => {
     try {
       const sentRes = await axiosReq.get("/posts/requests/sent/");
       const receivedRes = await axiosReq.get("/posts/requests/incoming/");
-      setSentRequests(sentRes.data.results || sentRes.data);
-      setReceivedRequests(receivedRes.data.results || receivedRes.data);
+
+      const sent = sentRes.data.results || sentRes.data;
+      const received = receivedRes.data.results || receivedRes.data;
+
+      setSentRequests(sent);
+      setReceivedRequests(received);
+
+      const allRequests = [...sent, ...received];
+      const focused = allRequests.find(r => r.id.toString() === focusId);
+      if (focused) {
+        console.log("🎯 Auto-selected focused request:", focused);
+        setSelectedRequest(focused);
+      }
     } catch (err) {
+      console.error("❌ Failed to load sitting requests:", err);
       setError("Failed to load sitting requests.");
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchRequests();
-  }, []);
 
   useEffect(() => {
-    const all = [...sentRequests, ...receivedRequests];
-    const match = all.find((r) => r.id.toString() === focusRequestId);
-    if (match) setSelectedRequest(match);
-  }, [focusRequestId, sentRequests, receivedRequests]);
+    loadRequests();
+  }, [focusId]);
+
 
   const handleRequestAction = async (requestId, action) => {
     try {
       await axiosReq.post(`/posts/requests/manage/${requestId}/`, { status: action });
-      fetchRequests();
+      await loadRequests();
       setSelectedRequest(null);
     } catch (err) {
       console.error(`Failed to ${action} request`, err);
     }
   };
+  
 
   const handleCancelRequest = async (requestId) => {
     try {
       await axiosReq.delete(`posts/requests/${requestId}/`);
-      fetchRequests();
+      await loadRequests();
       setSelectedRequest(null);
     } catch (err) {
       console.error("Failed to cancel request", err);
     }
   };
+
 
   const renderRequestCard = (req, type) => (
     <Card

@@ -36,6 +36,12 @@ code {
   }
 }
 
+.notifications-scroll-container {
+  max-height: 350px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
 /* Standard-Comments */
 .border-light {
   border-left: 4px solid #f8f9fa !important;

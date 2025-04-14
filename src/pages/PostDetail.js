@@ -55,6 +55,15 @@ const PostDetail = () => {
   const commentRefs = useRef({});
   const query = new URLSearchParams(window.location.search);
   const scrollToCommentId = query.get("comment");
+  const [showScrollTop, setShowScrollTop] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowScrollTop(window.scrollY > 300);
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
 
   // Button functionality
@@ -432,7 +441,7 @@ const PostDetail = () => {
       const liked = comments.some(c => c.id === commentId ? !c.has_liked : c.replies?.some(r => r.id === commentId && !r.has_liked));
     
       await axiosReq.post(`/comments/${commentId}/like/`);
-      toast[liked ? "success" : "error"](liked ? "👍 Liked" : "💔 Unliked");
+      toast[liked ? "success" : "error"](liked ? "👍 Liked" : "🤍 Unliked");
 
       setComments((prev) =>
         prev.map((c) => {
@@ -1020,6 +1029,15 @@ const PostDetail = () => {
           </Button>
         </Modal.Footer>
       </Modal>
+      {showScrollTop && (
+      <Button
+        className="scroll-btn"
+        variant="dark"
+        onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+      >
+        ⬆️
+      </Button>
+    )}
     </Container>
   );
 };

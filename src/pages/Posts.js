@@ -159,12 +159,24 @@ const Posts = ({ posts, loading, error, setPosts }) => {
     });
     
     try {
-      await axiosReq.post(`/posts/${postId}/request/`, {
+      const res = await axiosReq.post(`/posts/${postId}/request/`, {
         post: postId,
         message: sittingMessage,
       });
-
-      toast.success("✅ Request sent successfully!");
+      
+      const newRequestId = res.data?.id;
+      
+      toast.success(
+        <>
+          ✅ Request sent successfully!{" "}
+          <span
+            style={{ textDecoration: "underline", cursor: "pointer", color: "lightblue" }}
+            onClick={() => navigate(`/sitting-requests?focus=${newRequestId}`)}
+          >
+            View it here
+          </span>
+        </>
+      );      
 
       setAlreadyRequestedPostIds((prev) => {
         const newSet = new Set(prev);

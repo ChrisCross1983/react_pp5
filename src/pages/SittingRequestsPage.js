@@ -3,6 +3,8 @@ import { Row, Col, Card, Badge, Button, Spinner, Alert } from "react-bootstrap";
 import { axiosReq } from "../api/axios";
 import { useLocation } from "react-router-dom";
 import { useSearchParams } from "react-router-dom";
+import { toast } from "react-toastify";
+
 
 const SittingRequestsPage = () => {
   const [sentRequests, setSentRequests] = useState([]);
@@ -66,6 +68,7 @@ const SittingRequestsPage = () => {
       await axiosReq.post(`/posts/requests/manage/${requestId}/`, { action });
       await loadRequests();
       setSelectedRequest(null);
+      toast.success(`✅ Request ${action === "accept" ? "accepted" : "declined"} successfully!`);
     } catch (err) {
       console.error(`Failed to ${action} request`, err);
     }
@@ -73,12 +76,16 @@ const SittingRequestsPage = () => {
   
 
   const handleCancelRequest = async (requestId) => {
+    if (!window.confirm("❓ Are you sure you want to cancel this request?")) return;
+
     try {
       await axiosReq.delete(`posts/requests/${requestId}/`);
       await loadRequests();
       setSelectedRequest(null);
+      toast.success("🗑️ Request cancelled.");
     } catch (err) {
       console.error("Failed to cancel request", err);
+      toast.error("❌ Failed to cancel request.");
     }
   };
 
@@ -137,10 +144,10 @@ const SittingRequestsPage = () => {
                     <div className="mt-3 d-flex gap-2">
                       {receivedRequests.find((r) => r.id === selectedRequest.id) ? (
                         <>
-                          <Button variant="success" onClick={() => handleRequestAction(selectedRequest.id, "accepted")}>
+                          <Button variant="success" onClick={() => handleRequestAction(selectedRequest.id, "accept")}>
                             ✅ Accept
                           </Button>
-                          <Button variant="danger" onClick={() => handleRequestAction(selectedRequest.id, "declined")}>
+                          <Button variant="danger" onClick={() => handleRequestAction(selectedRequest.id, "decline")}>
                             ❌ Decline
                           </Button>
                         </>

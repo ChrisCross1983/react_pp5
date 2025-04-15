@@ -428,3 +428,71 @@ code {
   font-size: 16px;
   border-bottom: 1px solid #eee;
 }
+
+/* Profile Styling */
+.profile-container {
+  top: 80px;
+}
+
+.profile-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 2rem;
+}
+
+.profile-picture-wrapper {
+  flex-shrink: 0;
+}
+
+.profile-picture {
+  width: 180px;
+  height: 180px;
+  object-fit: cover;
+  border-radius: 50%;
+  border: 3px solid #ddd;
+}
+
+.profile-details h2 {
+  font-weight: bold;
+}
+
+.profile-bio {
+  font-size: 14px;
+  color: #555;
+}
+
+.profile-stats div {
+  font-size: 14px;
+  text-align: center;
+  min-width: 100px;
+}
+
+.post-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 12px;
+}
+
+.post-thumbnail img {
+  width: 100%;
+  height: 120px;
+  object-fit: cover;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: transform 0.2s ease-in-out;
+}
+
+.post-thumbnail img:hover {
+  transform: scale(1.03);
+}
+
+/* Tablets and smaller Screens */
+@media (max-width: 768px) {
+}
+
+/* For mobile devices */
+@media (max-width: 480px) {
+  .profile-container {
+    top: 60px;
+  }
+}

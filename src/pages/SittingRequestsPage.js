@@ -27,12 +27,6 @@ const SittingRequestsPage = () => {
       setSentRequests(sent);
       setReceivedRequests(received);
 
-      const allRequests = [...sent, ...received];
-      const focused = allRequests.find(r => r.id.toString() === focusId);
-      if (focused) {
-        console.log("🎯 Auto-selected focused request:", focused);
-        setSelectedRequest(focused);
-      }
     } catch (err) {
       console.error("❌ Failed to load sitting requests:", err);
       setError("Failed to load sitting requests.");
@@ -44,12 +38,32 @@ const SittingRequestsPage = () => {
 
   useEffect(() => {
     loadRequests();
-  }, [focusId]);
+  }, []);
+
+
+  useEffect(() => {
+    if (!focusId || sentRequests.length === 0 && receivedRequests.length === 0) return;
+
+    console.log("🧪 Checking focusId:", focusId);
+    console.log("📦 sentRequests:", sentRequests);
+    console.log("📦 receivedRequests:", receivedRequests);
+  
+    const all = [...sentRequests, ...receivedRequests];
+    console.log("📋 Combined requests:", all);
+
+    const match = all.find((r) => String(r.id) === String(focusId));
+    console.log("🔍 Matching request:", match);
+
+    if (match) {
+      console.log("🎯 Selecting focused request via effect:", match);
+      setSelectedRequest(match);
+    }
+  }, [focusId, sentRequests, receivedRequests]);  
 
 
   const handleRequestAction = async (requestId, action) => {
     try {
-      await axiosReq.post(`/posts/requests/manage/${requestId}/`, { status: action });
+      await axiosReq.post(`/posts/requests/manage/${requestId}/`, { action });
       await loadRequests();
       setSelectedRequest(null);
     } catch (err) {
@@ -102,7 +116,6 @@ const SittingRequestsPage = () => {
         <Row>
           {/* Left Column - Combined List */}
           <Col md={5}>
-            <h5 className="mb-3">📋 All Requests</h5>
             {[...receivedRequests, ...sentRequests].map((req) =>
               renderRequestCard(req, receivedRequests.includes(req) ? "received" : "sent")
             )}

@@ -31,6 +31,7 @@ const Posts = ({ posts, loading, error, setPosts }) => {
   const [sittingMessage, setSittingMessage] = useState("");
   const [sittingPost, setSittingPost] = useState(null);
   const [alreadyRequestedPostIds, setAlreadyRequestedPostIds] = useState([]);
+  const [alreadyRequestedRequests, setAlreadyRequestedRequests] = useState([]);
   const navigate = useNavigate();
 
 
@@ -48,11 +49,11 @@ const Posts = ({ posts, loading, error, setPosts }) => {
         const response = await axiosReq.get("/posts/requests/sent/");
         console.log("🚀 Sent Requests Response:", response.data);
 
-        const postIds = Array.isArray(response.data?.results)
-          ? response.data.results.map((req) => req.post)
-          : [];
+        const results = response.data?.results || response.data || [];
 
+        const postIds = results.map((req) => req.post);
         setAlreadyRequestedPostIds(postIds);
+        setAlreadyRequestedRequests(results);
       } catch (err) {
         console.error("❌ Error fetching sent requests", err);
       }
@@ -304,18 +305,23 @@ const Posts = ({ posts, loading, error, setPosts }) => {
                           }
                           onClick={(e) => {
                             e.stopPropagation();
-                        
+                          
                             const alreadyRequested = alreadyRequestedPostIds.includes(post.id);
+                            const matchingRequest = alreadyRequestedRequests.find(
+                              (req) => req.post === post.id
+                            );
+                          
                             console.log("📌 Requested postIds:", alreadyRequestedPostIds);
                             console.log("🔎 Checking post:", post.id, "| Already requested:", alreadyRequested);
-                        
+                            console.log("🎯 Matching request:", matchingRequest);
+                          
                             if (alreadyRequested) {
                               toast.info(
                                 <>
                                   🕓 You already sent a request.{" "}
                                   <span
                                     onClick={() =>
-                                      navigate(`/sitting-requests?focus=${post.id}`)
+                                      navigate(`/sitting-requests?focus=${matchingRequest?.id}`)
                                     }
                                     style={{
                                       textDecoration: "underline",
@@ -330,10 +336,10 @@ const Posts = ({ posts, loading, error, setPosts }) => {
                               );
                               return;
                             }
-                        
+                          
                             setSittingPost(post);
                             setShowSittingModal(true);
-                          }}
+                          }}                          
                           style={
                             alreadyRequestedPostIds.includes(post.id)
                               ? {

@@ -283,9 +283,7 @@ const PostDetail = () => {
         formData.append("image", editImage);
       }
   
-      const response = await axiosReq.put(`posts/${postId}/`, formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
+      const response = await axiosReq.put(`posts/${postId}/`, formData);
   
       setPost((prevPost) => ({
         ...prevPost,

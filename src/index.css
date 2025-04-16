@@ -431,7 +431,7 @@ code {
 
 /* Profile Styling */
 .profile-container {
-  top: 80px;
+  top: 30px;
 }
 
 .profile-header {
@@ -493,6 +493,6 @@ code {
 /* For mobile devices */
 @media (max-width: 480px) {
   .profile-container {
-    top: 60px;
+    top: 20px;
   }
 }

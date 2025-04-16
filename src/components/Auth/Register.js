@@ -3,11 +3,13 @@ import { useForm } from "react-hook-form";
 import { axiosReq } from "../../api/axios";
 import { Card, Button, Form, Alert, Image } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 
 const Register = () => {
   const [errorMessage, setErrorMessage] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [image, setImage] = useState(null);
   const [preview, setPreview] = useState(null);
   const navigate = useNavigate();
 
@@ -15,11 +17,8 @@ const Register = () => {
     register,
     handleSubmit,
     reset,
-    watch,
     formState: { errors },
   } = useForm();
-
-  const profilePicture = watch("profile_picture");
 
   const onSubmit = async (data) => {
     setIsSubmitting(true);
@@ -28,21 +27,35 @@ const Register = () => {
 
     try {
       const formData = new FormData();
+
+      console.log("📁 File type:", typeof image);
+      console.log("📸 File instanceof File?", image instanceof File);
+      console.log("🖼️ Image:", image);
+
       formData.append("username", data.username);
       formData.append("email", data.email);
       formData.append("first_name", data.first_name);
       formData.append("last_name", data.last_name);
       formData.append("password1", data.password);
       formData.append("password2", data.confirmPassword);
-      if (data.profile_picture?.[0]) {
-        formData.append("profile_picture", data.profile_picture[0]);
-      }
 
-      const response = await axiosReq.post("auth/registration/", formData);
+      if (image && image.type?.startsWith("image/")) {
+        formData.append("profile_picture", image);
+      } else {
+        console.warn("⚠️ Invalid picture:", image);
+      }         
 
-      setSuccessMessage(
-        "Registration successful! A verification email has been sent to your email address. Please check your inbox."
-      );
+      console.log("🖼️ Sending image to backend:", image);
+      const response = await axiosReq.post("profiles/auth/registration/", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+      
+      console.log("✅ Backend returned:", response.data);
+
+      toast.success("🎉 Welcome to Lucky Cat! Check your inbox to verify your email.");
+
       reset();
       setTimeout(() => navigate("/login"), 3000);
     } catch (error) {
@@ -59,7 +72,7 @@ const Register = () => {
   };
 
   return (
-    <div className="d-flex justify-content-center align-items-center vh-100 bg-light">
+    <div className="d-flex justify-content-center align-items-center vh-90 bg-light">
       <Card style={{ width: "100%", maxWidth: "420px" }} className="profile-container p-1 shadow-sm">
         <Card.Body>
           <Card.Title className="text-center mb-4">Register for Lucky Cat</Card.Title>
@@ -152,9 +165,7 @@ const Register = () => {
                 type="file"
                 accept="image/*"
                 {...register("profile_picture")}
-                onChange={(e) =>
-                  setPreview(e.target.files[0] ? URL.createObjectURL(e.target.files[0]) : null)
-                }
+                onChange={(e) => setImage(e.target.files[0])}
               />
               {preview && (
                 <div className="mt-2 text-center">

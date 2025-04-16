@@ -6,9 +6,6 @@ console.log("🌍 Axios baseURL is:", baseURL);
 export const axiosReq = axios.create({
   baseURL: baseURL,
   withCredentials: true,
-  headers: {
-    "Content-Type": "application/json",
-  },
 });
 
 axiosReq.interceptors.request.use((config) => {

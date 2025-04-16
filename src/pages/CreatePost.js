@@ -47,9 +47,8 @@ const CreatePost = () => {
         formData.append("image", image);
       }
 
-      const response = await axiosReq.post("posts/", formData, {
+      await axiosReq.post("posts/", formData, {
         headers: {
-          "Content-Type": "multipart/form-data",
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
       });

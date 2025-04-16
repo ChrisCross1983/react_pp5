@@ -116,9 +116,7 @@ const Posts = ({ posts, loading, error, setPosts }) => {
         formData.append("image", editImage);
       }
   
-      const response = await axiosReq.put(`posts/${postId}/`, formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
+      const response = await axiosReq.put(`posts/${postId}/`, formData);
   
       setPosts((prevPosts) => {
         const updatedPosts = prevPosts.map((p) =>

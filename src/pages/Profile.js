@@ -70,11 +70,8 @@ const Profile = () => {
         formData.append("profile_picture", image);
       }
 
-      const response = await axiosReq.put("profiles/edit/", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      });
+      const response = await axiosReq.patch("profiles/edit/", formData);
+
       setProfile(response.data);
       setFirstName(response.data.first_name || "");
       setLastName(response.data.last_name || "");
@@ -118,7 +115,7 @@ const Profile = () => {
           <img
             src={
               profile?.profile_picture?.includes("http")
-                ? profile.profile_picture
+                ? `${profile.profile_picture}?${Date.now()}`
                 : "/default-avatar.png"
             }
             onError={(e) => (e.target.src = "/default-avatar.png")}

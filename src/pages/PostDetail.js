@@ -84,23 +84,21 @@ const PostDetail = () => {
       try {
         const response = await axiosReq.get(`posts/${postId}/`);
         setPost(response.data);
-
-        if (commentsPage === 0 && !loadedPages.current.has(1)) {
-          setCommentsPage(1);
-        }
-
       } catch (err) {
-        console.error(
-          "❌ Error fetching post:",
-          err.response?.data || err.message
-        );
-        setError("Failed to load the post.");
+        console.error("❌ Error fetching post:", err.response?.data || err.message);
+        
+        if (err.response?.status === 404) {
+          toast.error("🚫 This post no longer exists.");
+          navigate("/");
+        } else {
+          setError("Failed to load the post.");
+        }
       }
       setLoading(false);
     };
 
     fetchData();
-  }, [postId]);
+  }, [postId, commentsPage, navigate]);
 
 
   useEffect(() => {
@@ -136,32 +134,39 @@ const PostDetail = () => {
 
   // Trigger initial load only after post is available
   useEffect(() => {
-    if (post && commentsPage === 0) {
-      console.log("🚀 Trigger initial page load (1)");
-      setCommentsPage(1);
-    }
-  }, [post, commentsPage]);
-
+    if (!post || commentsPage !== 0) return;
+  
+    console.log("🚀 Initial load: setting commentsPage = 1");
+    setCommentsPage(1);
+  }, [post, commentsPage, postId]);
+  
 
   // Load each page of comments
   useEffect(() => {
     console.log("📥 START PageLoader");
-    console.log("👉 postId:", postId);
-    console.log("👉 post:", post);
     console.log("👉 commentsPage:", commentsPage);
-    console.log("👉 isLoadingComments:", isLoadingComments);
     console.log("👉 loadedPages:", Array.from(loadedPages.current));
+  
+    if (
+      !postId ||
+      !post ||
+      isLoadingComments ||
+      commentsPage === 0
+    ) return;
+  
+    if (loadedPages.current.has(commentsPage)) {
+      console.log("⛔ Page already loaded, skipping:", commentsPage);
+      return;
+    }
 
-    if (!postId || !post || isLoadingComments || loadedPages.current.has(commentsPage)) return;
-    if (commentsPage === 0) return;    
-
+    loadedPages.current.add(commentsPage);
+  
     setIsLoadingComments(true);
-
+  
     axiosReq
       .get(`/comments/?post=${postId}&page=${commentsPage}`)
       .then((res) => {
         const newComments = res.data.results || [];
-        console.log(`📦 Page ${commentsPage} loaded: ${newComments.length} comments`);
   
         if (newComments.length === 0) {
           setHasMoreComments(false);
@@ -173,9 +178,7 @@ const PostDetail = () => {
           const unique = newComments.filter((c) => !seen.has(c.id));
           return [...prev, ...unique];
         });
-
-        loadedPages.current.add(commentsPage);
-
+  
         if (!res.data.next) {
           console.log("✅ No next page – setting hasMoreComments = false");
           setHasMoreComments(false);
@@ -193,26 +196,7 @@ const PostDetail = () => {
       .finally(() => {
         setIsLoadingComments(false);
       });
-  }, [commentsPage, post, postId, isLoadingComments]);   
-
-
-  useEffect(() => {
-    if (!scrollToCommentId) return;
-  
-    const interval = setInterval(() => {
-      const el = commentRefs.current[scrollToCommentId];
-      if (el) {
-        el.scrollIntoView({ behavior: "smooth", block: "center" });
-        el.classList.add("highlight-comment");
-        setTimeout(() => {
-          el.classList.remove("highlight-comment");
-        }, 1500);
-        clearInterval(interval);
-      }
-    }, 300);
-  
-    return () => clearInterval(interval);
-  }, [scrollToCommentId, comments]);
+  }, [commentsPage, post, postId, isLoadingComments]);
 
 
   //  Error handling: If `post === null`
@@ -272,6 +256,7 @@ const PostDetail = () => {
     setIsLiking(false);
   };
 
+
   const handleEditPost = async () => {
     setIsSaving(true);
     try {
@@ -304,6 +289,7 @@ const PostDetail = () => {
     }
   };
 
+
   const handleDeletePost = async () => {
     try {
       await axiosReq.delete(`posts/${postId}/`, {
@@ -315,6 +301,7 @@ const PostDetail = () => {
       toast.error("❌ Failed to delete post.");
     }
   };
+
 
   const handleCommentSubmit = async (e) => {
     e.preventDefault();
@@ -345,11 +332,13 @@ const PostDetail = () => {
     }
   };
 
+
   const handleEditComment = (comment) => {
     setEditCommentId(comment.id);
     setEditCommentContent(comment.content);
     setShowCommentEditModal(true);
   };
+
 
   const handleSaveEditComment = async () => {
     setIsSavingComment(true);
@@ -394,6 +383,7 @@ const PostDetail = () => {
     }
   };
 
+
   const handleReplySubmit = async (commentId) => {
     try {
       const response = await axiosReq.post(`/comments/`, {
@@ -434,55 +424,54 @@ const PostDetail = () => {
     }
   };
 
+
   const handleLikeComment = async (commentId) => {
     try {
-      const liked = comments.some(c => c.id === commentId ? !c.has_liked : c.replies?.some(r => r.id === commentId && !r.has_liked));
-    
-      await axiosReq.post(`/comments/${commentId}/like/`);
-      toast[liked ? "success" : "error"](liked ? "👍 Liked" : "🤍 Unliked");
-
+      const res = await axiosReq.post(`/comments/${commentId}/like/`);
+  
+      const { liked, likes_count } = res.data;
+  
       setComments((prev) =>
         prev.map((c) => {
           if (c.id === commentId) {
-            const liked = !c.has_liked;
             return {
               ...c,
               has_liked: liked,
-              likes_count: liked
-                ? c.likes_count + 1
-                : c.likes_count - 1,
+              likes_count,
             };
           }
   
           return {
             ...c,
-            replies: c.replies.map((r) => {
-              if (r.id === commentId) {
-                const liked = !r.has_liked;
-                return {
-                  ...r,
-                  has_liked: liked,
-                  likes_count: liked
-                    ? r.likes_count + 1
-                    : r.likes_count - 1,
-                };
-              }
-              return r;
-            }),
+            replies: c.replies.map((r) =>
+              r.id === commentId
+                ? {
+                    ...r,
+                    has_liked: liked,
+                    likes_count,
+                  }
+                : r
+            ),
           };
         })
       );
+  
+      toast.success(liked ? "👍 Liked" : "🤍 Unliked");
     } catch (err) {
+      console.error("❌ Error liking comment:", err);
       toast.error("❌ Like failed");
     }
-  };  
-  
+  };
+
+
   const toggleDropdown = () => setShowDropdown(!showDropdown);
+
 
   const handleTextareaResize = (event) => {
     event.target.style.height = "auto";
     event.target.style.height = `${event.target.scrollHeight}px`;
   };
+
 
   return (
     <Container className="mt-4">

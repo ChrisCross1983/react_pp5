@@ -59,8 +59,10 @@ const SittingRequestsPage = () => {
     if (match) {
       console.log("🎯 Selecting focused request via effect:", match);
       setSelectedRequest(match);
+    } else {
+      toast.error("🚫 This sitting request no longer exists.");
     }
-  }, [focusId, sentRequests, receivedRequests]);  
+  }, [focusId, sentRequests, receivedRequests]);
 
 
   const handleRequestAction = async (requestId, action) => {

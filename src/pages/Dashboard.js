@@ -19,6 +19,9 @@ const Dashboard = () => {
   const [userReady, setUserReady] = useState(false);
   const [showLeft, setShowLeft] = useState(false);
   const [showRight, setShowRight] = useState(false);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+
 
   // Set User ready
   useEffect(() => {
@@ -43,36 +46,39 @@ const Dashboard = () => {
 
   // Post Fetching
   useEffect(() => {
-    if (!userReady) {
-      console.log("⏳ userReady is false, skip fetching posts.");
-      return;
+    if (userReady) {
+      fetchPosts();
     }
+  }, [userReady]);
   
     const currentUser = username.toLowerCase();
     console.log("🟢 Fetching posts for:", currentUser);
   
     const fetchPosts = async () => {
-      console.log("📛 Token exists in fetch?", localStorage.getItem("accessToken"));
+      if (!userReady || !hasMore) return;
+    
+      const currentUser = username.toLowerCase();
+      console.log("🟢 Fetching page:", page);
+    
       setLoading(true);
+    
       try {
-        console.log("📤 Sending request to /posts/feed/ with token:", localStorage.getItem("accessToken"));
-        axiosReq.defaults.headers.common["Authorization"] = `Bearer ${localStorage.getItem("accessToken")}`;
-
-        const response = await axiosReq.get("/posts/feed/");
-        console.log("📦 Full response from /posts/feed/:", response.data);
+        const response = await axiosReq.get(`/posts/feed/?page=${page}`);
         const fetchedPosts = response.data?.results ?? [];
-
-        console.log("📦 Raw fetchedPosts:", fetchedPosts);
-
+    
         const updatedPosts = fetchedPosts.map((post) => ({
           ...post,
           is_owner: post.author?.toLowerCase() === currentUser,
-        }));        
-
-        console.log("🛠️ Processed updatedPosts:", updatedPosts);
-
-        setPosts(updatedPosts);
-        console.log("👀 Posts to render in state:", updatedPosts);
+        }));
+    
+        setPosts((prev) => {
+          const existingIds = new Set(prev.map((p) => p.id));
+          const filtered = updatedPosts.filter((p) => !existingIds.has(p.id));
+          return [...prev, ...filtered];
+        });
+        
+        setHasMore(!!response.data.next);
+        setPage((prev) => prev + 1);
       } catch (err) {
         console.error("❌ Failed to load posts:", err);
         setError("Failed to load posts. Please try again.");
@@ -81,10 +87,22 @@ const Dashboard = () => {
       }
     };
 
-    setTimeout(() => {
-      fetchPosts();
-    }, 300);
-  }, [userReady]);
+
+  // Infinite Scroll
+  useEffect(() => {
+    const handleScroll = () => {
+      const nearBottom =
+        window.innerHeight + window.scrollY >= document.body.offsetHeight - 500;
+  
+      if (nearBottom && !loading && hasMore) {
+        fetchPosts();
+      }
+    };
+  
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [loading, hasMore, userReady]);
+
 
   return (
     <Container fluid className="mt-4">

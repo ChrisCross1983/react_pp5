@@ -42,7 +42,7 @@ const Profile = () => {
         setLastName(profileRes.data.last_name || "");
         setBio(profileRes.data.bio || "");
 
-        const postsRes = await axiosReq.get(`posts/author-posts/?author=${id}`);
+        const postsRes = await axiosReq.get(`posts/author-posts/?author=${id}&page_size=100`);
         console.log("🔎 postsRes.data:", postsRes.data)
         setPosts(postsRes.data.results || []);
         console.log("✅ Final posts (should be array):", postsRes.data.results);
@@ -134,8 +134,8 @@ const Profile = () => {
             <div><strong>Posts</strong><br />{posts.length}</div>
             <div><strong>Followers</strong><br />{profile.followers_count}</div>
             <div><strong>Following</strong><br />{profile.following_count}</div>
-            <div><strong>Likes</strong><br />{posts.reduce((sum, p) => sum + (p.likes_count || 0), 0)}</div>
-            <div><strong>Comments</strong><br />{posts.reduce((sum, p) => sum + (p.comments_count || 0), 0)}</div>
+            <div><strong>Received Likes</strong><br />{posts.reduce((sum, p) => sum + (p.likes_count || 0), 0)}</div>
+            <div><strong>Received Comments</strong><br />{posts.reduce((sum, p) => sum + (p.comments_count || 0), 0)}</div>
             <div><strong>Requests</strong><br />In: {receivedRequests} / Out: {sentRequests}</div>
           </div>
 

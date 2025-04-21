@@ -23,30 +23,43 @@ const Profile = () => {
   const [receivedRequests, setReceivedRequests] = useState(0);
   const [isFollowing, setIsFollowing] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
-
+  const [kpis, setKpis] = useState({ comments: 0, likes: 0 });
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [bio, setBio] = useState("");
   const [image, setImage] = useState(null);
 
+
   useEffect(() => {
     const fetchData = async () => {
       try {
+        // Loading profile
         const profileRes = await axiosReq.get(`profiles/${id}/`);
         console.log("📦 Loaded profile:", profileRes.data);
         console.log("📷 profile_picture:", profileRes.data.profile_picture);
-
+  
         setProfile(profileRes.data);
         setIsFollowing(profileRes.data.is_following);
         setFirstName(profileRes.data.first_name || "");
         setLastName(profileRes.data.last_name || "");
         setBio(profileRes.data.bio || "");
-
+  
+        // Loading post of profile
         const postsRes = await axiosReq.get(`posts/author-posts/?author=${id}&page_size=100`);
-        console.log("🔎 postsRes.data:", postsRes.data)
+        console.log("🔎 postsRes.data:", postsRes.data);
         setPosts(postsRes.data.results || []);
         console.log("✅ Final posts (should be array):", postsRes.data.results);
+  
+        // Loading KPI-data for comments & likes
+        const kpiRes = await axiosReq.get("/profiles/kpis/");
+        console.log("📊 KPI-Response:", kpiRes.data);
 
+        setKpis({
+          comments: kpiRes.data.comments || 0,
+          likes: kpiRes.data.likes || 0,
+        });        
+  
+        // Loading sitting sequests
         const sentRes = await axiosReq.get("/posts/requests/sent/");
         const receivedRes = await axiosReq.get("/posts/requests/incoming/");
         setSentRequests(sentRes.data.length);
@@ -57,8 +70,10 @@ const Profile = () => {
         setLoading(false);
       }
     };
+  
     fetchData();
   }, [id]);
+
 
   const handleEditProfile = async () => {
     try {
@@ -134,8 +149,8 @@ const Profile = () => {
             <div><strong>Posts</strong><br />{posts.length}</div>
             <div><strong>Followers</strong><br />{profile.followers_count}</div>
             <div><strong>Following</strong><br />{profile.following_count}</div>
-            <div><strong>Received Likes</strong><br />{posts.reduce((sum, p) => sum + (p.likes_count || 0), 0)}</div>
-            <div><strong>Received Comments</strong><br />{posts.reduce((sum, p) => sum + (p.comments_count || 0), 0)}</div>
+            <div><strong>Received Likes</strong><br />{kpis.likes}</div>
+            <div><strong>Received Comments</strong><br />{kpis.comments}</div>
             <div><strong>Requests</strong><br />In: {receivedRequests} / Out: {sentRequests}</div>
           </div>
 

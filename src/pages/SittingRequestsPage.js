@@ -38,6 +38,11 @@ const SittingRequestsPage = () => {
   };
 
 
+  const allRequestsSorted = [...receivedRequests, ...sentRequests].sort(
+    (a, b) => new Date(b.created_at) - new Date(a.created_at)
+  );
+
+
   useEffect(() => {
     loadRequests();
   }, []);
@@ -92,28 +97,41 @@ const SittingRequestsPage = () => {
   };
 
 
-  const renderRequestCard = (req, type) => (
-    <Card
-      key={req.id}
-      className={`mb-2 shadow-sm pointer ${selectedRequest?.id === req.id ? "border-primary" : ""}`}
-      onClick={() => setSelectedRequest(req)}
-    >
-      <Card.Body>
-        <div className="d-flex justify-content-between align-items-center">
-          <div>
-            <span className="me-2">{type === "sent" ? "📤 Sent to" : "📥 From"}:</span>
-            <strong>{type === "sent" ? req.receiver_username : req.sender_username}</strong>
-            <br />
-            <small className="text-muted">Post: {req.post_title}</small>
-            <Badge bg="secondary" className="ms-2">{req.post_category}</Badge>
+  const renderRequestCard = (req, type) => {
+    const isSent = type === "sent";
+    const cardStyle = {
+      backgroundColor: isSent ? "#f0f4ff" : "#fffaf0",
+      borderLeft: `4px solid ${isSent ? "#0d6efd" : "#f39c12"}`, // blau vs. orange
+    };
+  
+    return (
+      <Card
+        key={req.id}
+        className={`mb-2 shadow-sm pointer ${selectedRequest?.id === req.id ? "border-primary" : ""}`}
+        onClick={() => setSelectedRequest(req)}
+        style={cardStyle}
+      >
+        <Card.Body>
+          <div className="d-flex justify-content-between align-items-center">
+            <div>
+              <span className="me-2">
+                {isSent ? "📤 Sent to" : "📥 From"}:
+              </span>
+              <strong>{isSent ? req.receiver_username : req.sender_username}</strong>
+              <br />
+              <small className="text-muted">📅 {new Date(req.created_at).toLocaleDateString()}</small><br />
+              <small className="text-muted">Post: {req.post_title}</small>
+              <Badge bg="secondary" className="ms-2">{req.post_category}</Badge>
+            </div>
+            <Badge bg={req.status === "pending" ? "warning" : req.status === "accepted" ? "success" : "danger"}>
+              {req.status}
+            </Badge>
           </div>
-          <Badge bg={req.status === "pending" ? "warning" : req.status === "accepted" ? "success" : "danger"}>
-            {req.status}
-          </Badge>
-        </div>
-      </Card.Body>
-    </Card>
-  );
+        </Card.Body>
+      </Card>
+    );
+  };
+
 
   return (
     <div className="container mt-4">
@@ -125,9 +143,11 @@ const SittingRequestsPage = () => {
         <Row>
           {/* Left Column - Combined List */}
           <Col md={5}>
-            {[...receivedRequests, ...sentRequests].map((req) =>
-              renderRequestCard(req, receivedRequests.includes(req) ? "received" : "sent")
-            )}
+            {([...receivedRequests, ...sentRequests]
+              .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+              .map((req) =>
+                renderRequestCard(req, receivedRequests.find(r => r.id === req.id) ? "received" : "sent")
+              ))}
           </Col>
 
           {/* Right Column - Detail View */}

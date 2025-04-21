@@ -15,12 +15,9 @@ import { toast } from "react-toastify";
 const Profile = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [posts, setPosts] = useState([]);
-  const [sentRequests, setSentRequests] = useState(0);
-  const [receivedRequests, setReceivedRequests] = useState(0);
   const [isFollowing, setIsFollowing] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [kpis, setKpis] = useState({ comments: 0, likes: 0 });
@@ -57,13 +54,10 @@ const Profile = () => {
         setKpis({
           comments: kpiRes.data.comments || 0,
           likes: kpiRes.data.likes || 0,
-        });        
-  
-        // Loading sitting sequests
-        const sentRes = await axiosReq.get("/posts/requests/sent/");
-        const receivedRes = await axiosReq.get("/posts/requests/incoming/");
-        setSentRequests(sentRes.data.length);
-        setReceivedRequests(receivedRes.data.length);
+          requests_in: kpiRes.data.requests_in || 0,
+          requests_out: kpiRes.data.requests_out || 0,
+        });              
+
       } catch (err) {
         toast.error("❌ Failed to load profile");
       } finally {
@@ -151,7 +145,7 @@ const Profile = () => {
             <div><strong>Following</strong><br />{profile.following_count}</div>
             <div><strong>Received Likes</strong><br />{kpis.likes}</div>
             <div><strong>Received Comments</strong><br />{kpis.comments}</div>
-            <div><strong>Requests</strong><br />In: {receivedRequests} / Out: {sentRequests}</div>
+            <div><strong>Requests</strong><br />In: {kpis.requests_in ?? 0} / Out: {kpis.requests_out ?? 0}</div>
           </div>
 
           {profile.is_owner ? (

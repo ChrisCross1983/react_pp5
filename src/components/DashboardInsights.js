@@ -51,9 +51,9 @@ export default function DashboardInsights() {
           break;
         case "follow":
           if (n.sender_profile_id) {
-            navigate(`/profiles/${n.sender_profile_id}`);
+            navigate(`/profiles/${n.sender_profile_id}?tab=follow-requests`);
           }
-          break;
+          break;       
         default:
           break;
       }

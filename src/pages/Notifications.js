@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from "react";
 import { Button, Spinner, Alert, Container, ListGroup } from "react-bootstrap";
 import { axiosReq } from "../api/axios";
+import { useNavigate } from "react-router-dom";
+
 
 const Notifications = () => {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const error = useState(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchNotifications();
@@ -68,14 +71,34 @@ const Notifications = () => {
             notification && typeof notification === "object" ? (
               <ListGroup.Item
                 key={notification.id}
-                className={`d-flex justify-content-between ${notification.is_read ? "text-muted" : ""}`}
+                className={`d-flex justify-content-between align-items-center ${
+                  notification.is_read ? "text-muted" : ""
+                }`}
+                style={{ cursor: "pointer" }}
+                onClick={() => {
+                  markAsRead(notification.id);
+
+                  // handle redirects based on notification type
+                  if (notification.type === "post" && notification.post_id) {
+                    navigate(`/posts/${notification.post_id}`);
+                  } else if (notification.type === "follow" && notification.sender_profile_id) {
+                    navigate(`/profile/${notification.sender_profile_id}?tab=follow-requests`);
+                  } else if (notification.type === "sitting" && notification.sitting_request_id) {
+                    navigate(`/sitting-requests?focus=${notification.sitting_request_id}`);
+                  } else {
+                    console.log("ℹ️ No matching navigation for:", notification);
+                  }
+                }}
               >
-                {notification.message}
+                <span>{notification.message}</span>
                 {!notification.is_read && (
                   <Button
                     variant="outline-secondary"
                     size="sm"
-                    onClick={() => markAsRead(notification.id)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      markAsRead(notification.id);
+                    }}
                   >
                     Mark as Read
                   </Button>

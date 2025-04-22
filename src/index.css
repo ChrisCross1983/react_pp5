@@ -441,15 +441,17 @@ code {
 }
 
 .profile-picture-wrapper {
-  flex-shrink: 0;
+  max-width: 160px;
+  margin-left: 0;
+  width: 100%;
 }
 
 .profile-picture {
-  width: 180px;
-  height: 180px;
-  object-fit: cover;
+  width: 100%;
+  height: auto;
   border-radius: 50%;
-  border: 3px solid #ddd;
+  object-fit: cover;
+  border: 2px solid #ccc;
 }
 
 .profile-details h2 {
@@ -469,21 +471,33 @@ code {
 
 .post-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 16px;
 }
 
 .post-thumbnail img {
   width: 100%;
-  height: 120px;
+  height: 160px;
   object-fit: cover;
-  cursor: pointer;
   border-radius: 8px;
   transition: transform 0.2s ease-in-out;
 }
 
 .post-thumbnail img:hover {
   transform: scale(1.03);
+  cursor: pointer;
+}
+
+.pointer {
+  cursor: pointer;
+}
+
+/* Extra large Screens */
+@media (max-width: 1200px) {
+  .profile-info,
+  .profile-stats {
+    justify-content: center;
+  }
 }
 
 /* Tablets and smaller Screens */

@@ -232,9 +232,10 @@ const Posts = ({ posts, loading, error, setPosts }) => {
                           "https://res.cloudinary.com/daj7vkzdw/image/upload/v1737570810/default_profile_uehpos.jpg"
                         }
                         alt="Profile"
-                        className="post-author-avatar"
+                        className="post-author-avatar pointer"
+                        onClick={() => navigate(`/profile/${post.author_profile.id}`)}
                       />
-                      <div className="post-author-info">
+                      <div className="post-author-info pointer" onClick={() => navigate(`/profile/${post.author_profile.id}`)}>
                         <strong>{post.author}</strong>
                         <p className="text-muted small">
                           {new Date(post.updated_at).toISOString().slice(0, 19) !== new Date(post.created_at).toISOString().slice(0, 19)

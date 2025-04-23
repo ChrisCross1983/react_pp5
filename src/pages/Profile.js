@@ -27,7 +27,7 @@ const Profile = () => {
   const [lastName, setLastName] = useState("");
   const [bio, setBio] = useState("");
   const [image, setImage] = useState(null);
-  const [followRequests, setFollowRequests] = useState([]);
+  const [followRequests, setFollowRequests] = useState({ sent: [], received: [] });
   const [followRequestStatus, setFollowRequestStatus] = useState(null);
   const [followRequestId, setFollowRequestId] = useState(null);
   const [followers, setFollowers] = useState([]);
@@ -51,10 +51,10 @@ const Profile = () => {
         setBio(profileRes.data.bio || "");
 
         const followersRes = await axiosReq.get(`/profiles/${id}/followers/`);
-        setFollowers(followersRes.data);
+        setFollowers(Array.isArray(followersRes.data) ? followersRes.data : []);
 
         const followingRes = await axiosReq.get(`/profiles/${id}/following/`);
-        setFollowing(followingRes.data);
+        setFollowing(Array.isArray(followingRes.data) ? followingRes.data : []);
   
         // Loading user posts
         const postsRes = await axiosReq.get(`posts/author-posts/?author=${id}&page_size=100`);
@@ -98,12 +98,14 @@ const Profile = () => {
     const fetchFollowRequests = async () => {
       try {
         const res = await axiosReq.get("/profiles/follow-requests/");
-        const received = res.data?.received || [];
-        setFollowRequests(received);
+        setFollowRequests({
+          sent: res.data?.sent || [],
+          received: res.data?.received || [],
+        });
       } catch (err) {
         toast.error("❌ Failed to load follow requests");
       }
-    };
+    };    
 
     if (profile?.is_owner) {
       fetchFollowRequests();
@@ -131,6 +133,20 @@ const Profile = () => {
       toast.success("✅ Request sent");
     } catch (err) {
       toast.error("❌ Failed to send request");
+    }
+  };
+
+
+  const cancelFollowRequest = async (requestId) => {
+    try {
+      await axiosReq.delete(`/profiles/follow-requests/cancel/${requestId}/`);
+      toast.success("🗑️ Request canceled");
+      setFollowRequests((prev) => ({
+        ...prev,
+        sent: prev.sent.filter((r) => r.id !== requestId),
+      }));
+    } catch (err) {
+      toast.error("❌ Failed to cancel request");
     }
   };
 
@@ -272,10 +288,10 @@ const Profile = () => {
               <h2 className="mb-1">
                 {firstName || profile?.first_name || "No Name"}{" "}
                 {lastName || profile?.last_name || ""}
+                {profile?.follows_you && (
+                  <span className="badge bg-info text-dark small ms-2">Follows you</span>
+                )}
               </h2>
-              {profile?.follows_you && (
-                <span className="badge bg-info text-dark small ms-2">Follows you</span>
-              )}
               <p className="profile-bio">{bio || "No bio yet."}</p>
             </div>
 
@@ -313,9 +329,9 @@ const Profile = () => {
     
           {/* Follow Action Buttons */}
           {profile && !profile.is_owner && (
-            <>
+            <div className="follow-button-wrapper">
               {followRequestStatus === "none" && (
-                <Button variant="success" onClick={sendFollowRequest} className="mt-2">
+                <Button variant="success" onClick={sendFollowRequest} className="mt-2 request-follow-btn">
                   ➕ Request to Follow
                 </Button>
               )}
@@ -329,7 +345,7 @@ const Profile = () => {
                   Unfollow
                 </Button>
               )}
-            </>
+            </div>
           )}
 
           {/* KPIs */}
@@ -398,36 +414,65 @@ const Profile = () => {
           <Tab eventKey="follow-requests" title="Follow Requests">
             <div className="mt-4">
               {profile?.is_owner ? (
-                followRequests.length === 0 ? (
-                  <Alert variant="info">No incoming follow requests.</Alert>
-                ) : (
-                  followRequests.map((req) => (
-                    <div
-                      key={req.id}
-                      className="d-flex justify-content-between align-items-center border p-2 mb-2 rounded"
-                    >
-                      <div>
-                        <strong>{req.from}</strong> wants to follow you
+                <>
+                  {/* Incoming Requests */}
+                  <h5>📨 Incoming</h5>
+                  {followRequests.received.length === 0 ? (
+                    <Alert variant="info">No incoming follow requests.</Alert>
+                  ) : (
+                    followRequests.received.map((req) => (
+                      <div
+                        key={req.id}
+                        className="d-flex justify-content-between align-items-center border p-2 mb-2 rounded"
+                      >
+                        <div>
+                          <strong>{req.from}</strong> wants to follow you
+                        </div>
+                        <div className="d-flex gap-2">
+                          {req.status === "accepted" ? (
+                            <span className="badge bg-success align-self-center">✅ Accepted</span>
+                          ) : (
+                            <>
+                              <Button size="sm" variant="success" onClick={() => acceptFollowRequestManually(req.id)}>
+                                Accept
+                              </Button>
+                              <Button size="sm" variant="outline-danger" onClick={() => declineFollowRequestManually(req.id)}>
+                                Decline
+                              </Button>
+                            </>
+                          )}
+                        </div>
                       </div>
-                      <div className="d-flex gap-2">
-                        {req.status === "accepted" ? (
-                          <Button size="sm" variant="outline-success" disabled>
-                            ✅ Accepted
+                    ))
+                  )}
+
+                  {/* Sent Requests */}
+                  <h5 className="mt-4">📤 Sent</h5>
+                  {followRequests.sent.length === 0 ? (
+                    <Alert variant="info">No sent follow requests.</Alert>
+                  ) : (
+                    followRequests.sent.map((req) => (
+                      <div
+                        key={req.id}
+                        className="d-flex justify-content-between align-items-center border p-2 mb-2 rounded"
+                      >
+                        <div>
+                          You requested to follow <strong>{req.to}</strong>
+                        </div>
+                        <div className="d-flex gap-2 align-items-center">
+                          <span className="badge bg-secondary">⏳ Pending</span>
+                          <Button
+                            size="sm"
+                            variant="outline-danger"
+                            onClick={() => cancelFollowRequest(req.id)}
+                          >
+                            Cancel
                           </Button>
-                        ) : (
-                          <>
-                            <Button size="sm" variant="success" onClick={() => acceptFollowRequestManually(req.id)}>
-                              Accept
-                            </Button>
-                            <Button size="sm" variant="outline-danger" onClick={() => declineFollowRequestManually(req.id)}>
-                              Decline
-                            </Button>
-                          </>
-                        )}
+                        </div>
                       </div>
-                    </div>
-                  ))
-                )
+                    ))
+                  )}
+                </>
               ) : (
                 <Alert variant="warning">Only visible on your own profile.</Alert>
               )}

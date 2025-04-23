@@ -492,10 +492,16 @@ code {
   cursor: pointer;
 }
 
+.follow-button-wrapper {
+  display: flex;
+  justify-content: flex-start;
+}
+
 /* Extra large Screens */
 @media (max-width: 1200px) {
   .profile-info,
-  .profile-stats {
+  .profile-stats,
+  .follow-button-wrapper {
     justify-content: center;
   }
 }

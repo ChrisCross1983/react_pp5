@@ -35,61 +35,60 @@ const Profile = () => {
   const [searchParams] = useSearchParams();
   const [isRequestReceiver, setIsRequestReceiver] = useState(false);
   const defaultTab = searchParams.get("tab") || "posts";
+  const fetchData = async () => {
+    try {
+      // Loading profile
+      const profileRes = await axiosReq.get(`profiles/${id}/`);
+      console.log("📦 Loaded profile:", profileRes.data);
+
+      setProfile(profileRes.data);
+      setIsFollowing(profileRes.data.is_following);
+      setFirstName(profileRes.data.first_name || "");
+      setLastName(profileRes.data.last_name || "");
+      setBio(profileRes.data.bio || "");
+
+      const followersRes = await axiosReq.get(`/profiles/${id}/followers/`);
+      setFollowers(Array.isArray(followersRes.data) ? followersRes.data : []);
+
+      const followingRes = await axiosReq.get(`/profiles/${id}/following/`);
+      setFollowing(Array.isArray(followingRes.data) ? followingRes.data : []);
+
+      // Loading user posts
+      const postsRes = await axiosReq.get(`posts/author-posts/?author=${id}&page_size=100`);
+      setPosts(postsRes.data.results || []);
+
+      // Loading KPI-Data (Likes, Comments, Sitting Requests)
+      const kpiRes = await axiosReq.get("/profiles/kpis/");
+      setKpis({
+        comments: kpiRes.data.comments || 0,
+        likes: kpiRes.data.likes || 0,
+        requests_in: kpiRes.data.requests_in || 0,
+        requests_out: kpiRes.data.requests_out || 0,
+      });
+
+      // Fetching follow-request-status
+      const followRes = await axiosReq.get("/profiles/follow-requests/");
+      const sent = followRes.data.sent.find(r => r.to === profileRes.data.owner);
+      const received = followRes.data.received.find(r => r.from === profileRes.data.owner);
+
+      let status = "none";
+      if (sent) status = "sent";
+      else if (received) status = "received";
+      else if (profileRes.data.is_following) status = "accepted";
+
+      setFollowRequestStatus(status);
+      setFollowRequestId(sent?.id || received?.id || null);
+      setIsRequestReceiver(!!received);
+
+    } catch (err) {
+      toast.error("❌ Failed to load profile");
+    } finally {
+      setLoading(false);
+    }
+  };
 
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        // Loading profile
-        const profileRes = await axiosReq.get(`profiles/${id}/`);
-        console.log("📦 Loaded profile:", profileRes.data);
-  
-        setProfile(profileRes.data);
-        setIsFollowing(profileRes.data.is_following);
-        setFirstName(profileRes.data.first_name || "");
-        setLastName(profileRes.data.last_name || "");
-        setBio(profileRes.data.bio || "");
-
-        const followersRes = await axiosReq.get(`/profiles/${id}/followers/`);
-        setFollowers(Array.isArray(followersRes.data) ? followersRes.data : []);
-
-        const followingRes = await axiosReq.get(`/profiles/${id}/following/`);
-        setFollowing(Array.isArray(followingRes.data) ? followingRes.data : []);
-  
-        // Loading user posts
-        const postsRes = await axiosReq.get(`posts/author-posts/?author=${id}&page_size=100`);
-        setPosts(postsRes.data.results || []);
-  
-        // Loading KPI-Data (Likes, Comments, Sitting Requests)
-        const kpiRes = await axiosReq.get("/profiles/kpis/");
-        setKpis({
-          comments: kpiRes.data.comments || 0,
-          likes: kpiRes.data.likes || 0,
-          requests_in: kpiRes.data.requests_in || 0,
-          requests_out: kpiRes.data.requests_out || 0,
-        });
-  
-        // Fetching follow-request-status
-        const followRes = await axiosReq.get("/profiles/follow-requests/");
-        const sent = followRes.data.sent.find(r => r.to === profileRes.data.owner);
-        const received = followRes.data.received.find(r => r.from === profileRes.data.owner);
-  
-        let status = "none";
-        if (sent) status = "sent";
-        else if (received) status = "received";
-        else if (profileRes.data.is_following) status = "accepted";
-
-        setFollowRequestStatus(status);
-        setFollowRequestId(sent?.id || received?.id || null);
-        setIsRequestReceiver(!!received);
-
-      } catch (err) {
-        toast.error("❌ Failed to load profile");
-      } finally {
-        setLoading(false);
-      }
-    };
-  
     fetchData();
   }, [id]);
 
@@ -178,11 +177,22 @@ const Profile = () => {
     try {
       await axiosReq.post(`/profiles/follow-requests/manage/${requestId}/`, { action: "accept" });
       toast.success("✅ Request accepted");
-      setFollowRequests((prev) => 
-        prev.map((r) =>
-          r.id === requestId ? { ...r, status: "accepted" } : r
-        )
-      );
+
+      setFollowRequests((prev) => ({
+        ...prev,
+        received: prev.received.filter((r) => r.id !== requestId),
+      }));
+
+      const kpiRes = await axiosReq.get("/profiles/kpis/");
+      setKpis({
+        comments: kpiRes.data.comments || 0,
+        likes: kpiRes.data.likes || 0,
+        requests_in: kpiRes.data.requests_in || 0,
+        requests_out: kpiRes.data.requests_out || 0,
+      });
+
+      fetchData();
+
     } catch (err) {
       toast.error("❌ Failed to accept request");
     }
@@ -193,11 +203,11 @@ const Profile = () => {
     try {
       await axiosReq.post(`/profiles/follow-requests/manage/${requestId}/`, { action: "decline" });
       toast.success("❌ Request declined");
-      setFollowRequests((prev) =>
-        prev.map((r) =>
-          r.id === requestId ? { ...r, status: "declined" } : r
-        )
-      );
+
+      setFollowRequests((prev) => ({
+        ...prev,
+        received: prev.received.filter((r) => r.id !== requestId),
+      }));
     } catch (err) {
       toast.error("❌ Failed to decline request");
     }

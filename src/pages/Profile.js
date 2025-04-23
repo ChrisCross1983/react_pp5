@@ -30,6 +30,8 @@ const Profile = () => {
   const [followRequests, setFollowRequests] = useState([]);
   const [followRequestStatus, setFollowRequestStatus] = useState(null);
   const [followRequestId, setFollowRequestId] = useState(null);
+  const [followers, setFollowers] = useState([]);
+  const [following, setFollowing] = useState([]);
   const [searchParams] = useSearchParams();
   const [isRequestReceiver, setIsRequestReceiver] = useState(false);
   const defaultTab = searchParams.get("tab") || "posts";
@@ -47,6 +49,12 @@ const Profile = () => {
         setFirstName(profileRes.data.first_name || "");
         setLastName(profileRes.data.last_name || "");
         setBio(profileRes.data.bio || "");
+
+        const followersRes = await axiosReq.get(`/profiles/${id}/followers/`);
+        setFollowers(followersRes.data);
+
+        const followingRes = await axiosReq.get(`/profiles/${id}/following/`);
+        setFollowing(followingRes.data);
   
         // Loading user posts
         const postsRes = await axiosReq.get(`posts/author-posts/?author=${id}&page_size=100`);
@@ -265,6 +273,9 @@ const Profile = () => {
                 {firstName || profile?.first_name || "No Name"}{" "}
                 {lastName || profile?.last_name || ""}
               </h2>
+              {profile?.follows_you && (
+                <span className="badge bg-info text-dark small ms-2">Follows you</span>
+              )}
               <p className="profile-bio">{bio || "No bio yet."}</p>
             </div>
 
@@ -308,9 +319,9 @@ const Profile = () => {
                   ➕ Request to Follow
                 </Button>
               )}
-              {followRequestStatus === "sent" && (
+              {(followRequestStatus === "sent" || followRequestStatus === "received") && (
                 <Button variant="secondary" className="mt-2" disabled>
-                  ⏳ Requested
+                  ⏳ Pending
                 </Button>
               )}
               {followRequestStatus === "accepted" && (
@@ -350,6 +361,34 @@ const Profile = () => {
                     style={{ cursor: "pointer" }}
                   >
                     <img src={post.image || "/default_post.jpg"} alt={post.title}/>
+                  </div>
+                ))
+              )}
+            </div>
+          </Tab>
+
+          <Tab eventKey="followers" title="Followers">
+            <div className="mt-4">
+              {followers.length === 0 ? (
+                <Alert variant="info">No followers yet.</Alert>
+              ) : (
+                followers.map((user) => (
+                  <div key={user.id} className="border p-2 mb-2 rounded">
+                    <strong>{user.username}</strong>
+                  </div>
+                ))
+              )}
+            </div>
+          </Tab>
+
+          <Tab eventKey="following" title="Following">
+            <div className="mt-4">
+              {following.length === 0 ? (
+                <Alert variant="info">You’re not following anyone yet.</Alert>
+              ) : (
+                following.map((user) => (
+                  <div key={user.id} className="border p-2 mb-2 rounded">
+                    <strong>{user.username}</strong>
                   </div>
                 ))
               )}
@@ -399,14 +438,6 @@ const Profile = () => {
             <Alert variant="info" className="mt-4">
               Activity log like likes/comments/sittings here.
             </Alert>
-          </Tab>
-
-          <Tab eventKey="followers" title="Followers">
-            <Alert variant="info" className="mt-4">Follower list placeholder</Alert>
-          </Tab>
-
-          <Tab eventKey="following" title="Following">
-            <Alert variant="info" className="mt-4">Following list placeholder</Alert>
           </Tab>
         </Tabs>
       </div>

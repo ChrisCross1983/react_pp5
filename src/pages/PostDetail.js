@@ -53,8 +53,6 @@ const PostDetail = () => {
   const loadedPages = useRef(new Set());
   const commentInputRef = useRef(null);
   const commentRefs = useRef({});
-  const query = new URLSearchParams(window.location.search);
-  const scrollToCommentId = query.get("comment");
   const [showScrollTop, setShowScrollTop] = useState(false);
 
   useEffect(() => {
@@ -139,7 +137,26 @@ const PostDetail = () => {
     console.log("🚀 Initial load: setting commentsPage = 1");
     setCommentsPage(1);
   }, [post, commentsPage, postId]);
+
+
+  // SCROLL + HIGHLIGHT Effekt for comments
+  useEffect(() => {
+    console.log("🪄 URL Search Params:", window.location.search);
+    const params = new URLSearchParams(window.location.search);
+    const commentIdFromURL = params.get("comment");
   
+    console.log("📌 scrollToCommentId extracted from URL:", commentIdFromURL);
+  
+    if (commentIdFromURL && commentRefs.current[commentIdFromURL]) {
+      const el = commentRefs.current[commentIdFromURL];
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      el.classList.add("highlight-comment");
+      setTimeout(() => {
+        el.classList.remove("highlight-comment");
+      }, 2000);
+    }
+  }, [window.location.search, comments]);
+
 
   // Load each page of comments
   useEffect(() => {

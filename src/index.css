@@ -21,19 +21,8 @@ code {
 }
 
 .highlight-comment {
-  animation: flashHighlight 1.2s ease;
-  background-color: rgba(255, 249, 196, 0.8);
-  border-left: 3px solid #ffc107;
-  padding-left: 0.75rem;
-}
-
-@keyframes flashHighlight {
-  from {
-    background-color: rgba(255, 249, 196, 0.8);
-  }
-  to {
-    background-color: transparent;
-  }
+  background-color: #fff3cd;
+  transition: background-color 0.6s ease;
 }
 
 .notifications-scroll-container {
@@ -495,6 +484,11 @@ code {
 .follow-button-wrapper {
   display: flex;
   justify-content: flex-start;
+}
+
+.follower-card:hover {
+  background-color: #f9f9f9;
+  transition: background-color 0.2s ease;
 }
 
 /* Extra large Screens */

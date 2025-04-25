@@ -21,8 +21,19 @@ code {
 }
 
 .highlight-comment {
-  background-color: #fff3cd;
-  transition: background-color 0.6s ease;
+  animation: flashHighlight 2s ease-in-out;
+}
+
+@keyframes flashHighlight {
+  0% {
+    background-color: #ffeeba;
+  }
+  50% {
+    background-color: #fff3cd;
+  }
+  100% {
+    background-color: transparent;
+  }
 }
 
 .notifications-scroll-container {
@@ -382,6 +393,74 @@ code {
   transform: scale(1.1);
 }
 
+textarea.form-control {
+  border-left: 3px solid #007bff;
+  background-color: #f8fbff;
+}
+
+/* Chat Styling */
+.chat-bubble {
+  padding: 10px 15px;
+  border-radius: 20px;
+  max-width: 70%;
+  word-break: break-word;
+  position: relative;
+  clear: both;
+}
+
+.chat-self {
+  background-color: #daf5e7;
+  align-self: flex-end;
+  text-align: right;
+  border-top-left-radius: 20px;
+  border-top-right-radius: 4px;
+}
+
+.chat-other {
+  background-color: #f1f1f1;
+  align-self: flex-start;
+  text-align: left;
+  border-top-right-radius: 20px;
+  border-top-left-radius: 4px;
+}
+
+.message-history {
+  max-height: 300px;
+  overflow-y: auto;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  border: 1px solid #ccc;
+  border-radius: 10px;
+  margin-top: 1rem;
+}
+
+.message-input-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.message-input-wrapper textarea {
+  padding-right: 50px;
+}
+
+.message-input-wrapper .comment-submit-btn {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  opacity: 1;
+}
+
+.message-history::-webkit-scrollbar {
+  width: 6px;
+}
+.message-history::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 3px;
+}
+
+/* Scroll to Top Button */
 .scroll-btn {
   position: fixed;
   bottom: 20px;

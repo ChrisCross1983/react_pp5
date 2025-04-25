@@ -77,6 +77,15 @@ export default function DashboardInsights() {
           }
           break;
 
+          case "sitting_message":
+            if (n.sitting_request_id) {
+              console.log("💬 Navigating to chat:", n.sitting_request_id);
+              navigate(`/sitting-requests?focus=${n.sitting_request_id}`);
+            } else {
+              toast.warn("❌ No request ID for chat.");
+            }
+            break;
+          
         default:
           toast.info("🔕 Unknown notification type.");
           console.warn("📎 Unknown type:", n.type);
@@ -122,7 +131,17 @@ export default function DashboardInsights() {
                   })}
                   onClick={() => handleClick(n)}
                 >
-                  <div><strong>{n.type.toUpperCase()}</strong>: {n.message}</div>
+                  <div>
+                    {n.type === "sitting_message" ? (
+                      <>
+                        <strong>💬 Chat:</strong> {n.message}
+                      </>
+                    ) : (
+                      <>
+                        <strong>{n.type.toUpperCase()}</strong>: {n.message}
+                      </>
+                    )}
+                  </div>
                   <div className="text-muted small">
                     {new Date(n.created_at).toLocaleString()}
                   </div>

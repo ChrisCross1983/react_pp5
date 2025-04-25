@@ -70,10 +70,6 @@ const Navigation = () => {
               <>
                 <Nav.Link as={Link} to="/dashboard">Dashboard</Nav.Link>
                 <Nav.Link as={Link} to="/sitting-requests">Sitting Requests</Nav.Link>
-                <Nav.Link as={Link} to="/notifications">
-                  🔔 Notifications{" "}
-                  {unreadCount > 0 && <Badge bg="danger">{unreadCount}</Badge>}
-                </Nav.Link>
                 {userId && (
                   <Nav.Link as={Link} to={`/profile/${userId}`}>Profile</Nav.Link>
                 )}

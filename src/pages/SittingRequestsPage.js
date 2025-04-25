@@ -1,10 +1,10 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useContext } from "react";
 import { Row, Col, Card, Badge, Button, Spinner, Alert } from "react-bootstrap";
 import { axiosReq } from "../api/axios";
 import { useLocation } from "react-router-dom";
 import { useSearchParams } from "react-router-dom";
 import { toast } from "react-toastify";
-
+import { AuthContext } from "../context/AuthContext";
 
 const SittingRequestsPage = () => {
   const [sentRequests, setSentRequests] = useState([]);
@@ -16,7 +16,16 @@ const SittingRequestsPage = () => {
   const params = new URLSearchParams(location.search);
   const focusRequestId = params.get("focus");
   const [searchParams] = useSearchParams();
+  const [responseMessage, setResponseMessage] = useState("");
+  const [responseHistory, setResponseHistory] = useState([]);
+  const [showSendButton, setShowSendButton] = useState(false);
+  const { user } = useContext(AuthContext);
+
+
   const focusId = searchParams.get("focus");
+  const allRequestsSorted = [...receivedRequests, ...sentRequests].sort(
+    (a, b) => new Date(b.created_at) - new Date(a.created_at)
+  );
 
   const loadRequests = async () => {
     try {
@@ -38,9 +47,26 @@ const SittingRequestsPage = () => {
   };
 
 
-  const allRequestsSorted = [...receivedRequests, ...sentRequests].sort(
-    (a, b) => new Date(b.created_at) - new Date(a.created_at)
-  );
+  const fetchMessages = async () => {
+    try {
+      if (!selectedRequest) return;
+
+      const res = await axiosReq.get("/posts/sitting-messages/");
+      const related = res.data.results.filter(
+        (msg) => msg.sitting_request === selectedRequest.id
+      );
+      setResponseHistory(related);
+    } catch (err) {
+      console.error("❌ Failed to load messages", err);
+    }
+  };
+
+
+  useEffect(() => {
+    if (selectedRequest) {
+      fetchMessages();
+    }
+  }, [selectedRequest]);
 
 
   useEffect(() => {
@@ -72,15 +98,54 @@ const SittingRequestsPage = () => {
 
   const handleRequestAction = async (requestId, action) => {
     try {
-      await axiosReq.post(`/posts/requests/manage/${requestId}/`, { action });
+      await axiosReq.post(`/posts/requests/manage/${requestId}/`, {
+        action: action,
+      });
+  
+      if (responseMessage.trim()) {
+        await axiosReq.post("/posts/sitting-messages/", {
+          sitting_request: requestId,
+          content: responseMessage,
+        });
+      }
+
+      const previousId = selectedRequest?.id;
+
       await loadRequests();
-      setSelectedRequest(null);
+
+      const updatedAll = [...sentRequests, ...receivedRequests];
+      const updated = updatedAll.find((r) => r.id === previousId);
+      if (updated) {
+        setSelectedRequest(updated);
+      } else {
+        setSelectedRequest(null);
+      }
+  
       toast.success(`✅ Request ${action === "accept" ? "accepted" : "declined"} successfully!`);
     } catch (err) {
       console.error(`Failed to ${action} request`, err);
     }
   };
+
+
+  const handleSendMessage = async () => {
+    try {
+      if (!responseMessage.trim()) return;
   
+      await axiosReq.post("/posts/sitting-messages/", {
+        sitting_request: selectedRequest.id,
+        content: responseMessage,
+      });
+  
+      await fetchMessages();
+      setResponseMessage("");
+      toast.success("💬 Message sent");
+    } catch (err) {
+      console.error("❌ Failed to send message", err);
+      toast.error("Failed to send message");
+    }
+  };
+
 
   const handleCancelRequest = async (requestId) => {
     if (!window.confirm("❓ Are you sure you want to cancel this request?")) return;
@@ -143,11 +208,9 @@ const SittingRequestsPage = () => {
         <Row>
           {/* Left Column - Combined List */}
           <Col md={5}>
-            {([...receivedRequests, ...sentRequests]
-              .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-              .map((req) =>
-                renderRequestCard(req, receivedRequests.find(r => r.id === req.id) ? "received" : "sent")
-              ))}
+            {allRequestsSorted.map((req) =>
+              renderRequestCard(req, receivedRequests.find(r => r.id === req.id) ? "received" : "sent")
+            )}
           </Col>
 
           {/* Right Column - Detail View */}
@@ -162,6 +225,32 @@ const SittingRequestsPage = () => {
                   <p><strong>Status:</strong> {selectedRequest.status}</p>
                   <p><strong>Message:</strong> {selectedRequest.message}</p>
                   <p><strong>Created:</strong> {new Date(selectedRequest.created_at).toLocaleString()}</p>
+
+                  {/* Response input for accepted or pending */}
+                  {["pending", "accepted"].includes(selectedRequest.status) && (
+                    <div className="message-input-wrapper mt-3">
+                      <textarea
+                        className="form-control"
+                        rows="2"
+                        placeholder="Write a message..."
+                        value={responseMessage}
+                        onChange={(e) => setResponseMessage(e.target.value)}
+                        onFocus={() => setShowSendButton(true)}
+                        onBlur={() => setTimeout(() => setShowSendButton(false), 200)}
+                      />
+                      {showSendButton && responseMessage.trim() && (
+                        <Button
+                          type="button"
+                          onClick={handleSendMessage}
+                          className="comment-submit-btn"
+                        >
+                          ➤
+                        </Button>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Action buttons */}
                   {selectedRequest.status === "pending" && (
                     <div className="mt-3 d-flex gap-2">
                       {receivedRequests.find((r) => r.id === selectedRequest.id) ? (
@@ -178,6 +267,34 @@ const SittingRequestsPage = () => {
                           ❌ Cancel Request
                         </Button>
                       )}
+                    </div>
+                  )}
+
+                  {/* Message history */}
+                  {responseHistory.length > 0 && (
+                    <div className="mt-4">
+                      <h6>💬 Messages</h6>
+                      <div className="message-history">
+                        {responseHistory
+                          .sort((a, b) => new Date(b.created_at) - new Date(a.created_at)) 
+                          .map((msg) => {
+                            const isSelf = msg.sender_name === user?.username;
+                            return (
+                              <div
+                                key={msg.id}
+                                className={`chat-bubble ${
+                                  msg.sender_name === user?.username ? "chat-self" : "chat-other"
+                                }`}
+                              >
+                                <p className="mb-1">{msg.content}</p>
+                                <small className="text-muted">
+                                  {msg.sender_name} · {new Date(msg.created_at).toLocaleTimeString()}
+                                </small>
+                              </div>
+                            );
+                          })
+                        }
+                      </div>
                     </div>
                   )}
                 </Card.Body>

@@ -35,63 +35,56 @@ export default function DashboardInsights() {
 
   const handleClick = async (n) => {
     console.log("🔍 Notification clicked:", n);
-
+  
     try {
-      // Mark as read
       await axiosReq.post(`/notifications/${n.id}/mark-read/`);
       console.log("📨 Marked as read:", n.id);
   
       switch (n.type) {
         case "comment":
-        case "like":
           if (n.post_id) {
-            console.log("💬 comment_id in notification:", n.comment_id);
             const commentParam = n.comment_id ? `&comment=${n.comment_id}` : "";
-            try {
-              await axiosReq.get(`/posts/${n.post_id}/`);
-              navigate(`/posts/${n.post_id}?from=notification${commentParam}`);
-            } catch {
-              toast.error("⚠️ This post no longer exists.");
-              console.warn("❌ Tried to access deleted post:", n.post_id);
-            }
+            navigate(`/posts/${n.post_id}?from=notification${commentParam}`);
           } else {
-            toast.warn("❌ No post ID found for this notification.");
+            toast.warn("❌ No post ID found for comment.");
           }
           break;
 
+          case "like":
+            if (n.post_id) {
+              const commentParam = n.comment_id ? `&comment=${n.comment_id}` : "";
+              const likeParam = n.comment_id ? "" : "&like=true";
+              try {
+                await axiosReq.get(`/posts/${n.post_id}/`);
+                navigate(`/posts/${n.post_id}?from=notification${commentParam}${likeParam}`);
+              } catch {
+                toast.error("⚠️ This post no longer exists.");
+              }
+            }
+            break;          
+
         case "follow":
           if (userId) {
-            console.log("👥 Navigating to profile with tab=follow-requests:", userId);
             navigate(`/profile/${userId}?tab=follow-requests`);
           } else {
             toast.error("⚠️ Cannot identify current user.");
           }
           break;
-
+  
         case "request":
+        case "sitting_message":
           if (n.sitting_request_id) {
-            console.log("🪑 Navigating to sitting request:", n.sitting_request_id);
             navigate(`/sitting-requests?focus=${n.sitting_request_id}`);
           } else {
             toast.warn("❌ No request ID found.");
           }
           break;
-
-          case "sitting_message":
-            if (n.sitting_request_id) {
-              console.log("💬 Navigating to chat:", n.sitting_request_id);
-              navigate(`/sitting-requests?focus=${n.sitting_request_id}`);
-            } else {
-              toast.warn("❌ No request ID for chat.");
-            }
-            break;
-          
+  
         default:
           toast.info("🔕 Unknown notification type.");
           console.warn("📎 Unknown type:", n.type);
       }
-
-      // Update state
+  
       setActivities((prev) =>
         prev.map((item) =>
           item.id === n.id ? { ...item, is_read: true } : item

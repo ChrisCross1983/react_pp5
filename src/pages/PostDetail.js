@@ -54,6 +54,8 @@ const PostDetail = () => {
   const commentInputRef = useRef(null);
   const commentRefs = useRef({});
   const [showScrollTop, setShowScrollTop] = useState(false);
+  const [savedScrollPosition, setSavedScrollPosition] = useState(null);
+
 
   useEffect(() => {
     const handleScroll = () => {
@@ -139,23 +141,35 @@ const PostDetail = () => {
   }, [post, commentsPage, postId]);
 
 
-  // SCROLL + HIGHLIGHT Effekt for comments
+  // SCROLL + HIGHLIGHT for Comments & Likes
   useEffect(() => {
-    console.log("🪄 URL Search Params:", window.location.search);
     const params = new URLSearchParams(window.location.search);
-    const commentIdFromURL = params.get("comment");
+    const commentId = params.get("comment");
+    const like = params.get("like");
   
-    console.log("📌 scrollToCommentId extracted from URL:", commentIdFromURL);
+    console.log("🔎 Extracted commentId:", commentId);
+    console.log("🔎 Extracted like param:", like);
   
-    if (commentIdFromURL && commentRefs.current[commentIdFromURL]) {
-      const el = commentRefs.current[commentIdFromURL];
+    if (commentId && commentRefs.current[commentId]) {
+      console.log("🚀 Scrolling to Comment ID:", commentId);
+      const el = commentRefs.current[commentId];
       el.scrollIntoView({ behavior: "smooth", block: "center" });
       el.classList.add("highlight-comment");
       setTimeout(() => {
         el.classList.remove("highlight-comment");
       }, 2000);
+    } else if (like === "true" && !commentId) {
+      console.log("🚀 Scrolling to Post Card (Post Like)");
+      const postCard = document.querySelector(".post-card");
+      if (postCard) {
+        postCard.scrollIntoView({ behavior: "smooth", block: "center" });
+        postCard.classList.add("highlight-comment");
+        setTimeout(() => {
+          postCard.classList.remove("highlight-comment");
+        }, 2000);
+      }
     }
-  }, [window.location.search, comments]);
+  }, [post, comments]);
 
 
   // Load each page of comments
@@ -216,23 +230,22 @@ const PostDetail = () => {
   }, [commentsPage, post, postId, isLoadingComments]);
 
 
-  //  Error handling: If `post === null`
-  if (loading) {
-    return (
-      <Container className="text-center mt-5">
-        <Spinner animation="border" variant="primary" />
-        <p>Loading post...</p>
-      </Container>
-    );
-  }
 
-  if (!post) {
-    return (
-      <Container className="text-center mt-5">
-        <Alert variant="danger">{error || "Post not found."}</Alert>
-      </Container>
-    );
-  }
+
+
+  const handleLoadMoreComments = () => {
+    setSavedScrollPosition(window.scrollY);
+    setCommentsPage((prev) => prev + 1);
+  };
+
+
+  useEffect(() => {
+    if (savedScrollPosition !== null) {
+      console.log("🔁 Restoring scroll position to:", savedScrollPosition);
+      window.scrollTo(0, savedScrollPosition);
+      setSavedScrollPosition(null);
+    }
+  }, [comments.length]);
 
 
   const handleLike = async () => {
@@ -490,6 +503,26 @@ const PostDetail = () => {
   };
 
 
+    //  Error handling: If `post === null`
+    if (loading) {
+      return (
+        <Container className="text-center mt-5">
+          <Spinner animation="border" variant="primary" />
+          <p>Loading post...</p>
+        </Container>
+      );
+    }
+
+
+    if (!post) {
+      return (
+        <Container className="text-center mt-5">
+          <Alert variant="danger">{error || "Post not found."}</Alert>
+        </Container>
+      );
+    }
+
+
   return (
     <Container className="mt-4">
       {loading && <Spinner animation="border" variant="primary" />}
@@ -508,18 +541,20 @@ const PostDetail = () => {
             </Button>
 
             {/* Post Author Bar */}
-            <Card className="shadow-sm p-3 mb-4">
+            <Card className="shadow-sm p-3 mb-4 post-card">
               <div className="post-author-bar">
                 <div className="post-author-info-container">
-                  <img
-                    src={
-                      post.author_image ||
-                      "https://res.cloudinary.com/daj7vkzdw/image/upload/v1737570810/default_profile_uehpos.jpg"
-                    }
-                    alt="Profile"
-                    className="post-author-avatar"
-                  />
-                  <div className="post-author-info">
+                <img
+                  src={
+                    post.author_profile?.profile_picture?.includes('http')
+                      ? post.author_profile.profile_picture
+                      : `https://res.cloudinary.com/daj7vkzdw/${post.author_profile.profile_picture}`
+                  }
+                  alt="Profile"
+                  className="post-author-avatar"
+                  onClick={() => navigate(`/profile/${post.author_profile?.id}`)}
+                />
+                  <div className="post-author-info pointer" onClick={() => navigate(`/profile/${post.author_profile.id}`)}>
                     <strong>{post.author}</strong>
                     <p className="text-muted small">
                       {new Date(post.updated_at).toISOString().slice(0, 19) !== new Date(post.created_at).toISOString().slice(0, 19)
@@ -683,12 +718,17 @@ const PostDetail = () => {
                       {/* Main comment */}
                       <div className="comment-header">
                         <div className="comment-info">
-                          <img
-                            src={comment.profile_image}
-                            alt="Profile"
-                            className="comment-avatar"
-                          />
-                          <div className="comment-meta">
+                        <img
+                          src={
+                            comment.profile_image
+                              ? comment.profile_image
+                              : "https://res.cloudinary.com/daj7vkzdw/image/upload/v1737570810/default_profile_uehpos.jpg"
+                          }
+                          alt="Profile"
+                          className="comment-avatar pointer"
+                          onClick={() => navigate(`/profile/${comment.profile_id}`)}
+                        />
+                          <div className="comment-meta pointer" onClick={() => navigate(`/profile/${comment.profile_id}`)}>
                             <strong>{comment.author}</strong>
                             <p className="text-muted small">
                               {new Date(comment.created_at).toLocaleString()}
@@ -788,12 +828,20 @@ const PostDetail = () => {
                               <div key={reply.id} className="reply">
                                 <div className="d-flex justify-content-between align-items-start">
                                   <div className="d-flex align-items-start gap-2">
-                                    <img
-                                      src={reply.profile_image}
-                                      alt="Reply Avatar"
-                                      className="comment-avatar-sm"
-                                    />
-                                    <div>
+                                  <img
+                                    src={
+                                      reply.profile_image
+                                        ? reply.profile_image
+                                        : "https://res.cloudinary.com/daj7vkzdw/image/upload/v1737570810/default_profile_uehpos.jpg"
+                                    }
+                                    alt="Reply Avatar"
+                                    className="comment-avatar-sm pointer"
+                                    onClick={() => navigate(`/profile/${reply.profile_id}`)}
+                                  />
+                                    <div
+                                      className="comment-meta pointer"
+                                      onClick={() => navigate(`/profile/${reply.profile_id}`)}
+                                    >
                                       <strong>{reply.author}</strong>{" "}
                                       <span className="text-muted small">
                                         {new Date(reply.created_at).toLocaleString()}
@@ -869,7 +917,7 @@ const PostDetail = () => {
                       <div className="text-center mt-3">
                         <Button
                           variant="outline-primary"
-                          onClick={() => setCommentsPage((prev) => prev + 1)}
+                          onClick={handleLoadMoreComments}
                         >
                           Load more comments
                         </Button>

@@ -226,15 +226,16 @@ const Posts = ({ posts, loading, error, setPosts }) => {
                   {/* Post Author Bar */}
                   <div className="post-author-bar">
                     <div className="post-author-info-container">
-                      <img
-                        src={
-                          post.author_image ||
-                          "https://res.cloudinary.com/daj7vkzdw/image/upload/v1737570810/default_profile_uehpos.jpg"
-                        }
-                        alt="Profile"
-                        className="post-author-avatar pointer"
-                        onClick={() => navigate(`/profile/${post.author_profile.id}`)}
-                      />
+                    <img
+                      src={
+                        post.author_profile?.profile_picture?.includes('http')
+                          ? post.author_profile.profile_picture
+                          : `https://res.cloudinary.com/daj7vkzdw/${post.author_profile.profile_picture}`
+                      }
+                      alt="Profile"
+                      className="post-author-avatar pointer"
+                      onClick={() => navigate(`/profile/${post.author_profile?.id}`)}
+                    />
                       <div className="post-author-info pointer" onClick={() => navigate(`/profile/${post.author_profile.id}`)}>
                         <strong>{post.author}</strong>
                         <p className="text-muted small">

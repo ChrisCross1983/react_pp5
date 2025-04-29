@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
-import { Container, Row, Col, Button, Card } from "react-bootstrap";
+import { Container, Row, Col, Button } from "react-bootstrap";
 import Posts from "./Posts";
 import { axiosReq } from "../api/axios";
 import { AuthContext } from "../context/AuthContext";

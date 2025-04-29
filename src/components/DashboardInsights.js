@@ -49,20 +49,20 @@ export default function DashboardInsights() {
             toast.warn("❌ No post ID found for comment.");
           }
           break;
-
-          case "like":
-            if (n.post_id) {
-              const commentParam = n.comment_id ? `&comment=${n.comment_id}` : "";
-              const likeParam = n.comment_id ? "" : "&like=true";
-              try {
-                await axiosReq.get(`/posts/${n.post_id}/`);
-                navigate(`/posts/${n.post_id}?from=notification${commentParam}${likeParam}`);
-              } catch {
-                toast.error("⚠️ This post no longer exists.");
-              }
+  
+        case "like":
+          if (n.post_id) {
+            const commentParam = n.comment_id ? `&comment=${n.comment_id}` : "";
+            const likeParam = n.comment_id ? "" : "&like=true";
+            try {
+              await axiosReq.get(`/posts/${n.post_id}/`);
+              navigate(`/posts/${n.post_id}?from=notification${commentParam}${likeParam}`);
+            } catch {
+              toast.error("⚠️ This post no longer exists.");
             }
-            break;          
-
+          }
+          break;
+  
         case "follow":
           if (userId) {
             navigate(`/profile/${userId}?tab=follow-requests`);
@@ -72,7 +72,6 @@ export default function DashboardInsights() {
           break;
   
         case "request":
-        case "sitting_message":
           if (n.sitting_request_id) {
             navigate(`/sitting-requests?focus=${n.sitting_request_id}`);
           } else {
@@ -80,9 +79,19 @@ export default function DashboardInsights() {
           }
           break;
   
+        case "sitting_message":
+          if (n.sitting_request_id && n.sitting_message_id) {
+            navigate(`/sitting-requests?focus=${n.sitting_request_id}&message=${n.sitting_message_id}`);
+          } else if (n.sitting_request_id) {
+            navigate(`/sitting-requests?focus=${n.sitting_request_id}`);
+          } else {
+            toast.warn("❌ No sitting message details found.");
+          }
+          break;
+  
         default:
           toast.info("🔕 Unknown notification type.");
-          console.warn("📎 Unknown type:", n.type);
+          console.warn("📎 Unknown notification type:", n.type);
       }
   
       setActivities((prev) =>
@@ -90,6 +99,7 @@ export default function DashboardInsights() {
           item.id === n.id ? { ...item, is_read: true } : item
         )
       );
+  
     } catch (err) {
       console.error("❌ Error handling notification click:", err);
       toast.error("⚠️ Failed to open notification.");

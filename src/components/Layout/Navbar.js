@@ -1,5 +1,5 @@
 import React, { useEffect, useContext, useCallback, useState } from "react";
-import { Navbar, Nav, Button, Container, Badge } from "react-bootstrap";
+import { Navbar, Nav, Button, Container } from "react-bootstrap";
 import { Link, useNavigate } from "react-router-dom";
 import { axiosReq } from "../../api/axios";
 import { AuthContext } from "../../context/AuthContext";
@@ -71,7 +71,7 @@ const Navigation = () => {
                 <Nav.Link as={Link} to="/dashboard">Dashboard</Nav.Link>
                 <Nav.Link as={Link} to="/sitting-requests">Sitting Requests</Nav.Link>
                 {userId && (
-                  <Nav.Link as={Link} to={`/profile/${userId}`}>Profile</Nav.Link>
+                  <Nav.Link as={Link} to={`/profile/${userId}`}>My Hub</Nav.Link>
                 )}
                 <span className="navbar-text mx-2 text-light">
                   Logged in as {username || "Unknown"}

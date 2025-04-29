@@ -40,6 +40,7 @@ const Profile = () => {
   const [isRequestReceiver, setIsRequestReceiver] = useState(false);
   const [searchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState(searchParams.get("tab") || "posts");
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   
   const fetchData = async () => {
     try {
@@ -271,14 +272,13 @@ const Profile = () => {
 
 
   const handleDeleteProfile = async () => {
-    if (!window.confirm("Are you sure you want to delete your profile?")) return;
-
     try {
       await axiosReq.delete("profiles/delete/");
       toast.success("🗑️ Profile deleted");
       navigate("/");
     } catch (err) {
-      toast.error("❌ Delete failed");
+      toast.error("❌ Failed to delete profile");
+      console.error(err);
     }
   };
 
@@ -351,7 +351,7 @@ const Profile = () => {
                   <li>
                     <button
                       className="dropdown-item text-danger"
-                      onClick={handleDeleteProfile}
+                      onClick={() => setShowDeleteModal(true)}
                     >
                       🗑️ Delete
                     </button>
@@ -721,6 +721,27 @@ const Profile = () => {
         </Button>
         <Button variant="primary" onClick={handleEditProfile}>
           Save
+        </Button>
+      </Modal.Footer>
+    </Modal>
+
+    {/* Delete Confirmation Modal */}
+    <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)} centered>
+      <Modal.Header closeButton>
+        <Modal.Title>Delete Profile</Modal.Title>
+      </Modal.Header>
+      <Modal.Body>
+        <p>⚠️ Are you sure you want to permanently delete your profile? This action cannot be undone.</p>
+      </Modal.Body>
+      <Modal.Footer>
+        <Button variant="secondary" onClick={() => setShowDeleteModal(false)}>
+          Cancel
+        </Button>
+        <Button variant="danger" onClick={async () => {
+          await handleDeleteProfile();
+          setShowDeleteModal(false);
+        }}>
+          🗑️ Yes, delete
         </Button>
       </Modal.Footer>
     </Modal>

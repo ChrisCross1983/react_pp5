@@ -10,6 +10,7 @@ import Posts from "./pages/Posts";
 import CreatePost from "./pages/CreatePost";
 import PostDetail from "./pages/PostDetail";
 import Profile from "./pages/Profile";
+import ResetPasswordPage from "./components/Auth/ResetPasswordPage";
 import { AuthProvider, AuthContext } from "./context/AuthContext";
 
 // Toastify imports
@@ -32,6 +33,7 @@ const AppRoutes = () => {
       <Route path="/posts/:id" element={<PostDetail />} />
       <Route path="/profile/:id" element={<Profile />} />
       <Route path="/sitting-requests" element={<SittingRequestsPage />} />
+      <Route path="/reset-password" element={<ResetPasswordPage />} />
       <Route path="*" element={<Navigate to="/" />} />
     </Routes>
   );

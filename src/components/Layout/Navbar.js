@@ -1,11 +1,12 @@
 import React, { useEffect, useContext, useCallback, useState } from "react";
 import { Navbar, Nav, Button, Container } from "react-bootstrap";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { axiosReq } from "../../api/axios";
 import { AuthContext } from "../../context/AuthContext";
 
 const Navigation = () => {
   const { isAuthenticated, userId, username, logout } = useContext(AuthContext);
+  const [expanded, setExpanded] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const navigate = useNavigate();
@@ -13,17 +14,16 @@ const Navigation = () => {
   const fetchNotifications = useCallback(async () => {
     try {
       const response = await axiosReq.get("notifications/all/");
-
       if (response.data && Array.isArray(response.data.results)) {
         setNotifications(response.data.results);
         setUnreadCount(response.data.results.filter((n) => n && !n.is_read).length);
       } else {
-        console.error("⚠️ Unexpected response format for notifications:", response.data);
+        console.error("⚠️ Unexpected response format:", response.data);
         setNotifications([]);
         setUnreadCount(0);
       }
     } catch (error) {
-      console.error("❌ Error fetching notifications:", error.response?.data || error.message);
+      console.error("❌ Notification fetch error:", error.response?.data || error.message);
       setNotifications([]);
       setUnreadCount(0);
     }
@@ -33,45 +33,52 @@ const Navigation = () => {
     await logout();
     localStorage.removeItem("username");
     navigate("/login");
+    setExpanded(false);
+  };
+
+  const handleNavClick = (path) => {
+    navigate(path);
+    setExpanded(false);
   };
 
   useEffect(() => {
-    console.log("🔄 Checking authentication status...");
-
     if (isAuthenticated) {
-      console.log("✅ User is authenticated, fetching user data...");
-
       axiosReq.get("profiles/auth/user/")
         .then(response => {
-          console.log("✅ User Data Loaded:", response.data);
-
           if (response.data.username) {
             localStorage.setItem("username", response.data.username.toLowerCase());
           }
-
           fetchNotifications();
         })
         .catch(error => {
-          console.error("❌ Error fetching user info:", error.response?.data || error.message);
+          console.error("❌ User info fetch error:", error.response?.data || error.message);
         });
     }
   }, [isAuthenticated, fetchNotifications]);
 
-  console.log("🔍 Authenticated:", isAuthenticated, "| User ID:", userId);
-
   return (
-    <Navbar bg="dark" variant="dark" expand="lg">
+    <Navbar bg="dark" variant="dark" expand="lg" expanded={expanded} onToggle={setExpanded}>
       <Container>
-        <Navbar.Brand as={Link} to="/">Lucky Cat</Navbar.Brand>
+        <Navbar.Brand onClick={() => handleNavClick("/")}>
+          Lucky Cat
+        </Navbar.Brand>
+
         <Navbar.Toggle aria-controls="basic-navbar-nav" />
+
         <Navbar.Collapse id="basic-navbar-nav">
           <Nav className="ms-auto">
             {isAuthenticated ? (
               <>
-                <Nav.Link as={Link} to="/dashboard">Dashboard</Nav.Link>
-                <Nav.Link as={Link} to="/sitting-requests">Sitting Requests</Nav.Link>
+                <Nav.Link as="span" onClick={() => handleNavClick("/dashboard")}>
+                  Dashboard
+                </Nav.Link>
+                <Nav.Link as="span" onClick={() => handleNavClick("/sitting-requests")}>
+                  Sitting Requests
+                </Nav.Link>
                 {userId && (
-                  <Nav.Link as={Link} to={`/profile/${userId}`}>My Hub</Nav.Link>
+                  <Nav.Link as="span" onClick={() => handleNavClick(`/profile/${userId}`)}>
+                    My Hub
+                  </Nav.Link>
                 )}
                 <span className="navbar-text mx-2 text-light">
                   Logged in as {username || "Unknown"}
@@ -82,8 +89,12 @@ const Navigation = () => {
               </>
             ) : (
               <>
-                <Nav.Link as={Link} to="/login">Login</Nav.Link>
-                <Nav.Link as={Link} to="/register">Register</Nav.Link>
+                <Nav.Link as="span" onClick={() => handleNavClick("/login")}>
+                  Login
+                </Nav.Link>
+                <Nav.Link as="span" onClick={() => handleNavClick("/register")}>
+                  Register
+                </Nav.Link>
               </>
             )}
           </Nav>

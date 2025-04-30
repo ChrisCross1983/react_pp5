@@ -62,6 +62,11 @@ const Posts = ({ posts, loading, error, setPosts }) => {
   }, []);
 
 
+  if (!Array.isArray(posts)) {
+    return <Alert variant="info">⚠️ No posts existing.</Alert>;
+  }
+
+
   const handleLike = async (post) => {
     try {
       setPosts((prev) =>
@@ -215,12 +220,12 @@ const Posts = ({ posts, loading, error, setPosts }) => {
       {loading && <Spinner animation="border" variant="primary" />}
       {error && <Alert variant="danger">{error}</Alert>}
 
-      {!loading && posts.length === 0 ? (
+      {!loading && Array.isArray(posts) && posts.length === 0 ? (
         <Alert variant="info">No posts found.</Alert>
       ) : (
         <>
           <Row className="justify-content-center">
-            {posts.map((post) => (
+          {Array.isArray(posts) && posts.map((post) => (
               <Col md={10} key={post.id} className="mb-4">
                 <Card className="shadow-sm">
                   {/* Post Author Bar */}
@@ -526,6 +531,13 @@ const Posts = ({ posts, loading, error, setPosts }) => {
       )}
     </Container>
   );
+};
+
+Posts.defaultProps = {
+  posts: [],
+  loading: false,
+  error: null,
+  setPosts: () => {},
 };
 
 export default Posts;

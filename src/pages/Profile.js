@@ -301,12 +301,14 @@ const Profile = () => {
           <img
             src={
               profile?.profile_picture?.includes("http")
-                ? `${profile.profile_picture}?${Date.now()}`
-                : "/default-avatar.png"
-            }
+                ? profile.profile_picture
+                : "/default-avatar.png"}
             onError={(e) => (e.target.src = "/default-avatar.png")}
             alt="Profile"
             className="profile-picture"
+            loading="lazy"
+            width="150"
+            height="150"
           />
         </div>
   
@@ -423,7 +425,13 @@ const Profile = () => {
                     onClick={() => navigate(`/posts/${post.id}`)}
                     style={{ cursor: "pointer" }}
                   >
-                    <img src={post.image || "/default_post.jpg"} alt={post.title}/>
+                    <img
+                      src={post.image || "/default_post.jpg"}
+                      alt={post.title}
+                      loading="lazy"
+                      width="160"
+                      height="160"
+                    />
                   </div>
                 ))
               )}

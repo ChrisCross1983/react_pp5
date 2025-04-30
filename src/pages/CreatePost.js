@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Container, Form, Button, Alert } from "react-bootstrap";
+import { Card, Container, Form, Button, Alert, Image } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 import { axiosReq } from "../api/axios";
 import { toast } from "react-toastify";
@@ -9,6 +9,7 @@ const CreatePost = () => {
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("general");
   const [image, setImage] = useState(null);
+  const [preview, setPreview] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
@@ -19,9 +20,22 @@ const CreatePost = () => {
     general: "general",
   };
 
+
   const handleImageChange = (e) => {
-    setImage(e.target.files[0]);
+    const file = e.target.files[0];
+    setImage(file);
+
+    if (file && file.type.startsWith("image/")) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+    } else {
+      setPreview(null);
+    }
   };
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -30,7 +44,6 @@ const CreatePost = () => {
       toast.error("❌ Title cannot be empty.");
       return;
     }
-  
     if (!description.trim()) {
       toast.error("❌ Description is required!");
       return;
@@ -56,10 +69,7 @@ const CreatePost = () => {
       toast.success("✅ Post created successfully!");
       navigate("/dashboard");
     } catch (err) {
-      console.error(
-        "❌ ERROR: Post cannot be created!",
-        err.response?.data || err.message
-      );
+      console.error("❌ Post creation failed", err.response?.data || err.message);
       setError("Post cannot be created. Please check your input");
     } finally {
       setUploading(false);
@@ -67,70 +77,86 @@ const CreatePost = () => {
   };
 
   return (
-    <Container>
-      <h2>📝 Create Post</h2>
-      {error && <Alert variant="danger">{error}</Alert>}
+    <div className="d-flex justify-content-center align-items-center vh-90 bg-light">
+      <Card style={{ width: "100%", maxWidth: "480px" }} className="profile-container p-1 shadow-sm">
+        <Card.Body>
+          <Card.Title className="text-center mb-4">📝 Create New Post</Card.Title>
 
-      <Form onSubmit={handleSubmit}>
-        {/* Title */}
-        {console.log("📌 Rendering Form Title Input...")}
-        <Form.Group className="mb-3">
-          <Form.Label>Title</Form.Label>
-          <Form.Control
-            type="text"
-            placeholder="Enter post title..."
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-          />
-        </Form.Group>
+          {error && <Alert variant="danger">{error}</Alert>}
 
-        {/* Description */}
-        {console.log("📌 Rendering Form Description Input...")}
-        <Form.Group className="mb-3">
-          <Form.Label>Description</Form.Label>
-          <Form.Control
-            as="textarea"
-            rows={3}
-            placeholder="Write something about your post..."
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-          />
-        </Form.Group>
+          <Form onSubmit={handleSubmit}>
+            <Form.Group className="mb-3">
+              <Form.Label>Title</Form.Label>
+              <Form.Control
+                type="text"
+                placeholder="Enter post title..."
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+              />
+            </Form.Group>
 
-        {/* Category Dropdown */}
-        {console.log("📌 Debug: Rendering Category Select Component", category)}
-        <Form.Group className="mb-3">
-          <Form.Label>Category</Form.Label>
-          {console.log("📌 Debug: Prüfe Form.Select", Form.Select)}
-          <Form.Control
-            as="select"
-            value={category}
-            onChange={(e) => setCategory(e.target.value)}
-          >
-            <option value="offer">Sitting Offer</option>
-            <option value="search">Sitting Request</option>
-            <option value="general">General</option>
-          </Form.Control>
-        </Form.Group>
+            <Form.Group className="mb-3">
+              <Form.Label>Description</Form.Label>
+              <Form.Control
+                as="textarea"
+                rows={3}
+                placeholder="Write something about your post..."
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+              />
+            </Form.Group>
 
-        {/* Image Upload */}
-        {console.log("📌 Rendering Form Image Upload...")}
-        <Form.Group className="mb-3">
-          <Form.Label>Upload Image</Form.Label>
-          <Form.Control
-            type="file"
-            accept="image/*"
-            onChange={handleImageChange}
-          />
-        </Form.Group>
+            <Form.Group className="mb-3">
+              <Form.Label>Category</Form.Label>
+              <Form.Control
+                as="select"
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+              >
+                <option value="offer">Sitting Offer</option>
+                <option value="search">Sitting Request</option>
+                <option value="general">General</option>
+              </Form.Control>
+            </Form.Group>
 
-        {/* Submit Button */}
-        {console.log("📌 Rendering Form Submit Button...")}
-        <Button type="submit" variant="primary" disabled={uploading}>
-          {uploading ? "Uploading..." : "Create Post"}
-        </Button>
-      </Form>
-    </Container>
+            <Form.Group className="mb-3">
+              <Form.Label>Upload Image</Form.Label>
+              <Form.Control
+                type="file"
+                accept="image/*"
+                onChange={handleImageChange}
+              />
+              {preview && (
+                <div className="mt-2 text-center">
+                  <Image
+                    src={preview}
+                    alt="Preview"
+                    rounded
+                    fluid
+                    style={{ maxHeight: "200px", border: "1px solid #ccc" }}
+                  />
+                </div>
+              )}
+            </Form.Group>
+
+            <Button
+              variant="primary"
+              type="submit"
+              className="w-100"
+              disabled={uploading}
+            >
+              {uploading ? "Uploading..." : "Create Post"}
+            </Button>
+          </Form>
+
+          <div className="text-center mt-3">
+            <small>
+              Not ready yet? <a href="/dashboard">Go back to Dashboard</a>
+            </small>
+          </div>
+        </Card.Body>
+      </Card>
+    </div>
   );
 };
 

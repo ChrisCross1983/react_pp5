@@ -54,7 +54,9 @@ export default function DashboardSidebar() {
 
   return (
     <Card className="mb-4 shadow-sm sidebar-card">
-        <Card.Header className="bg-light fw-bold">🐾 Sitting Requests</Card.Header>
+        <Card.Header className="bg-light fw-bold d-flex justify-content-between align-items-center dashboard-sidebar-header">
+          Sitting Requests
+        </Card.Header>
         <Card.Body>
             {loading ? (
             <Spinner animation="border" size="sm" />

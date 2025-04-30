@@ -1,3 +1,5 @@
+// src/pages/Home.js
+
 import React from "react";
 import { Container, Alert } from "react-bootstrap";
 import { Link } from "react-router-dom";
@@ -15,9 +17,7 @@ const Home = () => {
       </p>
 
       {isLoggedIn ? (
-        <>
-          <Dashboard />
-        </>
+        <Dashboard />
       ) : (
         <Alert variant="warning" className="text-center">
           Please <Link to="/login">log in</Link> to view posts.

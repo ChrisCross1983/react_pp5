@@ -107,14 +107,35 @@ export default function DashboardInsights() {
   };
 
 
+  const handleMarkAllAsRead = async () => {
+    try {
+      await axiosReq.post("/notifications/mark-all-read/");
+      setActivities(prev => prev.map(a => ({ ...a, is_read: true })));
+      toast.success("✅ All notifications marked as read.");
+    } catch (err) {
+      console.error("❌ Failed to mark all notifications as read", err);
+      toast.error("❌ Could not mark all as read.");
+    }
+  };
+
+
   return (
     <Card className="mb-4 shadow-sm sidebar-card">
-      <Card.Header className="bg-light fw-bold d-flex justify-content-between align-items-center">
-        <span>📌 Notifications</span>
+      <Card.Header className="bg-light fw-bold d-flex justify-content-between align-items-center dashboard-insights-header">
+        <div className="d-flex align-items-center">
+          <span className="me-2">Notifications</span>
+          {unreadCount > 0 && (
+            <span className="badge bg-danger rounded-pill me-2">{unreadCount}</span>
+          )}
+        </div>
         {unreadCount > 0 && (
-          <span className="badge bg-danger rounded-pill">
-            {unreadCount}
-          </span>
+          <button
+            className="btn btn-outline-success btn-sm"
+            onClick={handleMarkAllAsRead}
+            title="Mark all as read"
+          >
+            ✅
+          </button>
         )}
       </Card.Header>
 

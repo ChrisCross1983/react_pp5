@@ -11,7 +11,6 @@ import DashboardInsights from "../components/DashboardInsights";
 
 const Dashboard = () => {
   const { username } = useContext(AuthContext);
-  const navigate = useNavigate();
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -21,6 +20,7 @@ const Dashboard = () => {
   const [showRight, setShowRight] = useState(false);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
+  const navigate = useNavigate();
 
 
   // Set User ready
@@ -116,12 +116,12 @@ const Dashboard = () => {
 
       <Row>
         {/* Left Sidebar - Dashboard Insights */}
-        <Col md={3} className="d-none d-md-block">
+        <Col lg={3} className="d-none d-lg-block">
           <DashboardInsights />
         </Col>
 
         {/* Main Content - Posts Feed */}
-        <Col md={6}>
+        <Col lg={6}>
           <Posts
             posts={posts}
             setPosts={setPosts}
@@ -131,17 +131,18 @@ const Dashboard = () => {
         </Col>
 
         {/* Right Sidebar - Sitting Requests Overview */}
-        <Col md={3} className="d-none d-md-block">
+        <Col lg={3} className="d-none d-lg-block">
           <DashboardSidebar />
         </Col>
 
         {/* MOBILE Offcanvas */}
-        <Col xs={12} className="d-block d-md-none">
+        <Col xs={12} className="d-block d-lg-none">
           {/* Fixed Buttons at the bottom */}
           <div className="d-flex justify-content-between fixed-bottom px-3 pb-3">
             <Button
               variant="outline-secondary"
               onClick={() => setShowLeft(true)}
+              className="offcanvas-toggle-btn"
               style={{ borderRadius: "50%", width: "50px", height: "50px" }}
             >
               🔥
@@ -149,9 +150,10 @@ const Dashboard = () => {
             <Button
               variant="outline-secondary"
               onClick={() => setShowRight(true)}
+              className="offcanvas-toggle-btn"
               style={{ borderRadius: "50%", width: "50px", height: "50px" }}
             >
-              🐾
+              🐱
             </Button>
           </div>
 
@@ -166,12 +168,21 @@ const Dashboard = () => {
           </Offcanvas>
 
           {/* Offcanvas - Right (SittingRequests) */}
-          <Offcanvas show={showRight} onHide={() => setShowRight(false)} placement="end">
+          <Offcanvas
+            show={showRight}
+            onHide={() => setShowRight(false)}
+            placement="end"
+            className="custom-offcanvas-narrow"
+          >
             <Offcanvas.Header closeButton>
-              <Offcanvas.Title>🐾 Sitting Requests</Offcanvas.Title>
+              <Offcanvas.Title as="h3" className="w-100 text-center">
+                📬 My Cat-Sitting Inbox
+              </Offcanvas.Title>
             </Offcanvas.Header>
             <Offcanvas.Body>
-              <SittingRequestsPage />
+              <div className="sitting-requests-inner-wrapper">
+                <SittingRequestsPage />
+              </div>
             </Offcanvas.Body>
           </Offcanvas>
         </Col>

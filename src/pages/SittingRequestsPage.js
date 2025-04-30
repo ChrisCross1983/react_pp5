@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useContext } from "react";
+import React, { useEffect, useState, useContext, useRef } from "react";
 import { Row, Col, Card, Badge, Button, Spinner, Alert } from "react-bootstrap";
 import { axiosReq } from "../api/axios";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -9,15 +9,12 @@ import { Dropdown as BsDropdown } from "react-bootstrap";
 import { Modal } from "react-bootstrap";
 
 
-const SittingRequestsPage = () => {
+const SittingRequestsPage = ({ onClose }) => {
   const [sentRequests, setSentRequests] = useState([]);
   const [receivedRequests, setReceivedRequests] = useState([]);
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const location = useLocation();
-  const params = new URLSearchParams(location.search);
-  const [searchParams] = useSearchParams();
   const [responseMessage, setResponseMessage] = useState("");
   const [responseHistory, setResponseHistory] = useState([]);
   const [showSendButton, setShowSendButton] = useState(false);
@@ -28,9 +25,17 @@ const SittingRequestsPage = () => {
   const [showDropdownId, setShowDropdownId] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingMessage, setEditingMessage] = useState(null);
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 992);
+  const searchParams = new URLSearchParams(useLocation().search);
   const focusId = searchParams.get("focus");
   const messageId = searchParams.get("message");
+  const scrollRef = useRef(null);
+  const { search } = useLocation();
+  const location = useLocation();
+  
+  console.log("🔍 focusId:", focusId);
+  console.log("🔍 messageId:", messageId);
+
   const navigate = useNavigate();
   const allRequestsSorted = [...receivedRequests, ...sentRequests].sort(
     (a, b) => new Date(b.created_at) - new Date(a.created_at)
@@ -73,6 +78,8 @@ const SittingRequestsPage = () => {
           setSelectedRequest(null);
         }
       }
+
+      console.log("📥 responseHistory for selected request:", responseHistory);
   
     } catch (err) {
       console.error("❌ Failed to load messages", err);
@@ -146,24 +153,46 @@ const SittingRequestsPage = () => {
     const matchedRequest = all.find((r) => String(r.id) === String(focusId));
   
     if (matchedRequest) {
-      console.log("🎯 Selecting focused request:", matchedRequest);
       setSelectedRequest(matchedRequest);
-      setHighlightRequestId(matchedRequest.id);
-  
-      setTimeout(() => {
-        setHighlightRequestId(null);
-      }, 2000);
-    } else {
+    
+      if (!messageId) {
+        setHighlightRequestId(matchedRequest.id);
+    
+        setTimeout(() => {
+          setHighlightRequestId(null);
+        }, 2000);
+      }
+    }
+     else {
       toast.error("🚫 This sitting request no longer exists.");
     }
   }, [focusId, sentRequests, receivedRequests]);
 
 
   useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    const handleResize = () => setIsMobile(window.innerWidth < 992);
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+
+  useEffect(() => {
+    if (!messageId || responseHistory.length === 0) return;
+  
+    const tryScroll = () => {
+      const target = document.getElementById(`chat-msg-${messageId}`);
+      if (target) {
+        console.log("✅ Found and scrolling to message:", messageId);
+        target.scrollIntoView({ behavior: "smooth", block: "center" });
+      } else {
+        console.log("⏳ Waiting for message DOM...", messageId);
+        setTimeout(tryScroll, 100);
+      }
+    };
+  
+    // initialer Delay zum Rendern
+    setTimeout(tryScroll, 100);
+  }, [responseHistory, messageId]);
 
 
   const handleRequestAction = async (requestId, action) => {
@@ -293,7 +322,7 @@ const SittingRequestsPage = () => {
       ) : (
         <>
           <Row>
-            <Col md={5}>
+            <Col xs={12} lg={5}>
               {allRequestsSorted.map((req) =>
                 renderRequestCard(req, receivedRequests.find(r => r.id === req.id) ? "received" : "sent")
               )}
@@ -353,13 +382,19 @@ const SittingRequestsPage = () => {
                           )}
                         </div>
                       )}
-  
+                      <div className="chatbox-container">
                       {responseHistory
                         .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
                         .map((msg) => {
                           const isSelf = msg?.sender?.id === userId;
                           return (
-                            <div key={msg.id} className={`chat-message-wrapper ${isSelf ? "self" : "other"}`}>
+                            <div
+                              key={msg.id}
+                              id={`chat-msg-${msg.id}`}
+                              className={`chat-message-wrapper ${isSelf ? "self" : "other"} ${
+                                String(msg.id) === messageId ? "highlight-comment" : ""
+                              }`}
+                            >
                               <div className={`chat-bubble ${isSelf ? "chat-self" : "chat-other"}`}>
                                 <div className="chat-header">
                                   <div className="chat-author-bar pointer" onClick={() => navigate(`/profile/${msg.sender.id}`)}>
@@ -412,6 +447,7 @@ const SittingRequestsPage = () => {
                             </div>
                           );
                         })}
+                      </div>
                     </Card.Body>
                   </Card>
                 ) : (
@@ -428,7 +464,9 @@ const SittingRequestsPage = () => {
           {isMobile && selectedRequest && (
             <Modal
               show={true}
-              onHide={() => setSelectedRequest(null)}
+              onHide={() => {
+                setSelectedRequest(null);
+              }}
               centered
               size="lg"
               scrollable
@@ -466,7 +504,7 @@ const SittingRequestsPage = () => {
                     >
                       {responseHistory.length > 0 ? (
                         responseHistory
-                          .sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
+                          .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
                           .map((msg) => {
                             const isSelf = msg?.sender?.id === userId;
                             return (

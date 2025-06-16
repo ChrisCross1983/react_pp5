@@ -3,7 +3,7 @@
   "name": "moments",
   "version": "0.1.0",
   "private": true,
-  "homepage": "https://luckycat-frontend-e730bcd9b089.herokuapp.com/react_pp5",
+  "homepage": ".",
   "dependencies": {
     "@radix-ui/react-tabs": "^1.0.0",
     "@testing-library/jest-dom": "^5.17.0",

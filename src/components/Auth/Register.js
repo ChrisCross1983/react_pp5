@@ -105,7 +105,17 @@ const Register = () => {
               <Form.Control
                 type="text"
                 placeholder="Enter your username"
-                {...register("username", { required: "Username is required" })}
+                {...register("username", {
+                  required: "Username is required",
+                  minLength: {
+                    value: 2,
+                    message: "Username must be at least 2 characters",
+                  },
+                  pattern: {
+                    value: /^[a-zA-Z0-9_]+$/,
+                    message: "Only letters, numbers and underscores are allowed",
+                    },
+                })}
                 isInvalid={!!errors.username}
               />
               <Form.Control.Feedback type="invalid">

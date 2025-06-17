@@ -48,6 +48,10 @@ const CreatePost = () => {
       toast.error("❌ Description is required!");
       return;
     }
+    if (description.length > 1000) {
+      toast.error("❌ Description must be max. 1000 characters long.");
+      return;
+    }
 
     try {
       setUploading(true);

@@ -959,6 +959,7 @@ const PostDetail = () => {
                 <Form.Control
                   as="textarea"
                   rows={3}
+                  maxLength={1000}
                   value={editContent}
                   onChange={(e) => setEditContent(e.target.value)}
                 />

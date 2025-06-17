@@ -47,7 +47,6 @@ const Posts = ({ posts, loading, error, setPosts }) => {
     const fetchSentRequests = async () => {
       try {
         const response = await axiosReq.get("/posts/requests/sent/");
-        console.log("🚀 Sent Requests Response:", response.data);
 
         const results = response.data?.results || response.data || [];
 
@@ -155,11 +154,6 @@ const Posts = ({ posts, loading, error, setPosts }) => {
       toast.info("🛑 Request already sent. No duplicate allowed.");
       return;
     }
-
-    console.log("📨 Submitting request to", `/posts/${postId}/request/`, {
-      post: postId,
-      message: sittingMessage,
-    });
     
     try {
       const res = await axiosReq.post(`/posts/${postId}/request/`, {
@@ -187,8 +181,6 @@ const Posts = ({ posts, loading, error, setPosts }) => {
         return Array.from(newSet);
       });
     } catch (err) {
-      console.error("❌ Error sending request", err);
-
       const detail = err.response?.data?.detail || "Failed to send request.";
       toast.error(`❌ ${detail}`);
     } finally {
@@ -327,10 +319,6 @@ const Posts = ({ posts, loading, error, setPosts }) => {
                             const matchingRequest = alreadyRequestedRequests.find(
                               (req) => req.post === post.id
                             );
-                          
-                            console.log("📌 Requested postIds:", alreadyRequestedPostIds);
-                            console.log("🔎 Checking post:", post.id, "| Already requested:", alreadyRequested);
-                            console.log("🎯 Matching request:", matchingRequest);
                           
                             if (alreadyRequested) {
                               toast.info(

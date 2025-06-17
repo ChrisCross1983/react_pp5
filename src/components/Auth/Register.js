@@ -28,10 +28,6 @@ const Register = () => {
     try {
       const formData = new FormData();
 
-      console.log("📁 File type:", typeof image);
-      console.log("📸 File instanceof File?", image instanceof File);
-      console.log("🖼️ Image:", image);
-
       formData.append("username", data.username);
       formData.append("email", data.email);
       formData.append("first_name", data.first_name);
@@ -45,14 +41,11 @@ const Register = () => {
         console.warn("⚠️ Invalid picture:", image);
       }         
 
-      console.log("🖼️ Sending image to backend:", image);
       const response = await axiosReq.post("profiles/auth/registration/", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
       });
-      
-      console.log("✅ Backend returned:", response.data);
 
       toast.success("🎉 Welcome to Lucky Cat! Check your inbox to verify your email.");
 

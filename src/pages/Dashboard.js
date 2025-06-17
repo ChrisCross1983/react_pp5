@@ -26,7 +26,6 @@ const Dashboard = () => {
   // Set User ready
   useEffect(() => {
     if (username) {
-      console.log("✅ userReady TRIGGERED:", username);
       setUserReady(true);
     }
   }, [username]);
@@ -52,13 +51,11 @@ const Dashboard = () => {
   }, [userReady]);
   
     const currentUser = username.toLowerCase();
-    console.log("🟢 Fetching posts for:", currentUser);
   
     const fetchPosts = async () => {
       if (!userReady || !hasMore) return;
     
       const currentUser = username.toLowerCase();
-      console.log("🟢 Fetching page:", page);
     
       setLoading(true);
     

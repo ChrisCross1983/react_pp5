@@ -46,10 +46,8 @@ const Profile = () => {
     try {
       // Loading profile
       const profileRes = await axiosReq.get(`profiles/${id}/`);
-      console.log("📦 Loaded profile:", profileRes.data);
 
       setProfile(profileRes.data);
-      console.log("📈 KPIs from profile:", profileRes.data.followers_count, profileRes.data.following_count);
       setIsFollowing(profileRes.data.is_following);
       setFirstName(profileRes.data.first_name || "");
       setLastName(profileRes.data.last_name || "");
@@ -57,9 +55,6 @@ const Profile = () => {
 
       const followersRes = await axiosReq.get(`/profiles/${id}/followers/`);
       const followingRes = await axiosReq.get(`/profiles/${id}/following/`);
-
-      console.log("🐾 Followers:", followersRes.data);
-      console.log("🐾 Following:", followingRes.data);
 
       setFollowers(Array.isArray(followersRes.data?.results) ? followersRes.data.results : []);
       setFollowing(Array.isArray(followingRes.data?.results) ? followingRes.data.results : []);
@@ -130,11 +125,6 @@ const Profile = () => {
       fetchFollowRequests();
     }
   }, [profile]);
-
-
-  useEffect(() => {
-    console.log("📩 Status:", followRequestStatus, "| Receiver?", isRequestReceiver);
-  }, [followRequestStatus, isRequestReceiver]);
 
 
   useEffect(() => {

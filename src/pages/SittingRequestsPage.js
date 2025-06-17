@@ -32,9 +32,7 @@ const SittingRequestsPage = ({ onClose }) => {
   const scrollRef = useRef(null);
   const { search } = useLocation();
   const location = useLocation();
-  
-  console.log("🔍 focusId:", focusId);
-  console.log("🔍 messageId:", messageId);
+
 
   const navigate = useNavigate();
   const allRequestsSorted = [...receivedRequests, ...sentRequests].sort(
@@ -78,11 +76,9 @@ const SittingRequestsPage = ({ onClose }) => {
           setSelectedRequest(null);
         }
       }
-
-      console.log("📥 responseHistory for selected request:", responseHistory);
   
     } catch (err) {
-      console.error("❌ Failed to load messages", err);
+      toast.error("❌ Failed to load messages");
     }
   };
 
@@ -147,8 +143,6 @@ const SittingRequestsPage = ({ onClose }) => {
   useEffect(() => {
     if (!focusId || (sentRequests.length === 0 && receivedRequests.length === 0)) return;
   
-    console.log("🧪 Checking focusId:", focusId);
-  
     const all = [...sentRequests, ...receivedRequests];
     const matchedRequest = all.find((r) => String(r.id) === String(focusId));
   
@@ -182,15 +176,12 @@ const SittingRequestsPage = ({ onClose }) => {
     const tryScroll = () => {
       const target = document.getElementById(`chat-msg-${messageId}`);
       if (target) {
-        console.log("✅ Found and scrolling to message:", messageId);
         target.scrollIntoView({ behavior: "smooth", block: "center" });
       } else {
-        console.log("⏳ Waiting for message DOM...", messageId);
         setTimeout(tryScroll, 100);
       }
     };
   
-    // initialer Delay zum Rendern
     setTimeout(tryScroll, 100);
   }, [responseHistory, messageId]);
 

@@ -136,7 +136,6 @@ const PostDetail = () => {
   useEffect(() => {
     if (!post || commentsPage !== 0) return;
   
-    console.log("🚀 Initial load: setting commentsPage = 1");
     setCommentsPage(1);
   }, [post, commentsPage, postId]);
 
@@ -147,11 +146,7 @@ const PostDetail = () => {
     const commentId = params.get("comment");
     const like = params.get("like");
   
-    console.log("🔎 Extracted commentId:", commentId);
-    console.log("🔎 Extracted like param:", like);
-  
     if (commentId && commentRefs.current[commentId]) {
-      console.log("🚀 Scrolling to Comment ID:", commentId);
       const el = commentRefs.current[commentId];
       el.scrollIntoView({ behavior: "smooth", block: "center" });
       el.classList.add("highlight-comment");
@@ -159,7 +154,6 @@ const PostDetail = () => {
         el.classList.remove("highlight-comment");
       }, 2000);
     } else if (like === "true" && !commentId) {
-      console.log("🚀 Scrolling to Post Card (Post Like)");
       const postCard = document.querySelector(".post-card");
       if (postCard) {
         postCard.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -174,10 +168,6 @@ const PostDetail = () => {
 
   // Load each page of comments
   useEffect(() => {
-    console.log("📥 START PageLoader");
-    console.log("👉 commentsPage:", commentsPage);
-    console.log("👉 loadedPages:", Array.from(loadedPages.current));
-  
     if (
       !postId ||
       !post ||
@@ -186,12 +176,10 @@ const PostDetail = () => {
     ) return;
   
     if (loadedPages.current.has(commentsPage)) {
-      console.log("⛔ Page already loaded, skipping:", commentsPage);
       return;
     }
 
     loadedPages.current.add(commentsPage);
-  
     setIsLoadingComments(true);
   
     axiosReq
@@ -211,7 +199,6 @@ const PostDetail = () => {
         });
   
         if (!res.data.next) {
-          console.log("✅ No next page – setting hasMoreComments = false");
           setHasMoreComments(false);
         }
       })
@@ -230,9 +217,6 @@ const PostDetail = () => {
   }, [commentsPage, post, postId, isLoadingComments]);
 
 
-
-
-
   const handleLoadMoreComments = () => {
     setSavedScrollPosition(window.scrollY);
     setCommentsPage((prev) => prev + 1);
@@ -241,7 +225,6 @@ const PostDetail = () => {
 
   useEffect(() => {
     if (savedScrollPosition !== null) {
-      console.log("🔁 Restoring scroll position to:", savedScrollPosition);
       window.scrollTo(0, savedScrollPosition);
       setSavedScrollPosition(null);
     }

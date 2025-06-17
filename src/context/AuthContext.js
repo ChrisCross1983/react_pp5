@@ -23,11 +23,6 @@ export const AuthProvider = ({ children }) => {
     }
   }, [isAuthenticated]);
 
-  // DEBUG-LOG for Username
-  useEffect(() => {
-    console.log("🔄 [AuthContext] username set:", username);
-  }, [username]);
-
   const login = (accessToken, refreshToken) => {
     localStorage.setItem("accessToken", accessToken);
     localStorage.setItem("refreshToken", refreshToken);

@@ -35,8 +35,6 @@ const Login = () => {
     try {
       const response = await axiosReq.post("auth/login/", { username, password });
 
-      console.log("✅ Login Response:", response.data);
-
       if (response.data.access && response.data.refresh) {
         login(response.data.access, response.data.refresh);
 

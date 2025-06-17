@@ -34,11 +34,8 @@ export default function DashboardInsights() {
 
 
   const handleClick = async (n) => {
-    console.log("🔍 Notification clicked:", n);
-  
     try {
       await axiosReq.post(`/notifications/${n.id}/mark-read/`);
-      console.log("📨 Marked as read:", n.id);
   
       switch (n.type) {
         case "comment":

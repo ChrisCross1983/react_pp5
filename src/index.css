@@ -572,6 +572,18 @@ textarea.form-control {
   line-height: 1;
 }
 
+.sitting-btn {
+  background-color: #83121c !important;
+  color: #fff !important;
+}
+
+/* Hover-Zustand */
+.sitting-btn:hover,
+.sitting-btn:focus {
+  background-color: #610e15 !important;
+  color: #fff !important;
+}
+
 /* Scroll to Top Button */
 .scroll-btn {
   position: fixed;

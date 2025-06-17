@@ -33,7 +33,10 @@ const Posts = ({ posts, loading, error, setPosts }) => {
   const [alreadyRequestedPostIds, setAlreadyRequestedPostIds] = useState([]);
   const [alreadyRequestedRequests, setAlreadyRequestedRequests] = useState([]);
   const navigate = useNavigate();
-
+  const getOptimizedUrl = (url) =>
+  url?.replace('/upload/', '/upload/w_600,f_auto,q_auto/');
+  const getBlurredUrl = (url) =>
+  url?.replace('/upload/', '/upload/e_blur:2000,q_10/');
 
   useEffect(() => {
     const storedUser = localStorage.getItem("username");
@@ -272,14 +275,21 @@ const Posts = ({ posts, loading, error, setPosts }) => {
 
                   {/* Clickabel Post Image */}
                   <Link to={`/posts/${post.id}/`}>
-                    <Card.Img
-                      variant="top"
-                      src={
-                        post.image ||
-                        "https://res.cloudinary.com/daj7vkzdw/image/upload/v1737570695/default_post_tuonop.jpg"
-                      }
-                      alt="Post Image"
-                      className="post-image"
+                    <img
+                      src={getOptimizedUrl(post.image)}
+                      alt=""
+                      className="card-img-top post-image"
+                      loading="lazy"
+                      sizes="(max-width: 768px) 100vw, 600px"
+                      onError={(e) => {
+                        e.target.src = "https://res.cloudinary.com/daj7vkzdw/image/upload/v1737570810/default_profile_uehpos.jpg";
+                      }}
+                      style={{
+                        width: "100%",
+                        height: "auto",
+                        objectFit: "cover",
+                        background: `url(${getBlurredUrl(post.image)}) center center / cover no-repeat`
+                      }}
                     />
                   </Link>
 
@@ -302,6 +312,7 @@ const Posts = ({ posts, loading, error, setPosts }) => {
                     </Button>
                       {(post.category === "offer" || post.category === "search") && !post.is_owner && (
                         <Button
+                          className="sitting-btn"
                           variant={
                             alreadyRequestedPostIds.includes(post.id)
                               ? "secondary"

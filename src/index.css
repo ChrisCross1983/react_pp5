@@ -575,7 +575,7 @@ textarea.form-control {
 /* Scroll to Top Button */
 .scroll-btn {
   position: fixed;
-  bottom: 20px;
+  top: 5%;
   left: 50%;
   transform: translateX(-50%);
   width: 50px;

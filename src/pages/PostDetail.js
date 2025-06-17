@@ -662,7 +662,8 @@ const PostDetail = () => {
                       ref={commentInputRef}
                       as="textarea"
                       rows={1}
-                      placeholder="Write a comment..."
+                      maxLength={500}
+                      placeholder="Write a comment... (max 500 characters)"
                       value={newComment}
                       onChange={(e) => {
                         setNewComment(e.target.value);
@@ -769,7 +770,8 @@ const PostDetail = () => {
                             <Form.Control
                               as="textarea"
                               rows={1}
-                              placeholder="Write a reply..."
+                              maxLength={500}
+                              placeholder="Write a reply... (max 500 characters)"
                               value={replyContent[comment.id] || ""}
                               onChange={(e) =>
                                 setReplyContent({
@@ -833,7 +835,11 @@ const PostDetail = () => {
                                       <Button
                                         size="sm"
                                         variant={reply.has_liked ? "primary" : "outline-primary"}
-                                        onClick={() => handleLikeComment(reply.id)}
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleLikeComment(reply.id);
+                                        }}
+                                        className="like-reply-btn"
                                       >
                                         👍 Like <span className="text-muted">|</span> <span>{reply.likes_count}</span>
                                       </Button>
@@ -989,6 +995,7 @@ const PostDetail = () => {
           <Form.Control
             as="textarea"
             rows={3}
+            maxLength={500}
             value={editCommentContent}
             onChange={(e) => setEditCommentContent(e.target.value)}
           />

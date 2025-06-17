@@ -595,6 +595,8 @@ const PostDetail = () => {
                 }
                 alt="Post Image"
                 className="post-image"
+                fetchPriority="high"
+                sizes="(max-width: 768px) 100vw, 600px"
               />
 
               {/* Like & Comment Buttons */}

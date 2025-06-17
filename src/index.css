@@ -573,14 +573,14 @@ textarea.form-control {
 }
 
 .sitting-btn {
-  background-color: #83121c !important;
+  background-color: #0a3d15 !important;
   color: #fff !important;
 }
 
 /* Hover-Zustand */
 .sitting-btn:hover,
 .sitting-btn:focus {
-  background-color: #610e15 !important;
+  background-color: #0d5330 !important;
   color: #fff !important;
 }
 

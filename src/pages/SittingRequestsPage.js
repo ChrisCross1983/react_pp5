@@ -294,7 +294,7 @@ const SittingRequestsPage = ({ onClose }) => {
               </div>
             </div>
 
-            <Badge bg={req.status === "pending" ? "warning" : req.status === "accepted" ? "success" : "danger"}>
+            <Badge bg={req.status === "pending" ? "dark" : req.status === "accepted" ? "success" : "danger"}>
               {req.status}
             </Badge>
           </div>
@@ -478,7 +478,7 @@ const SittingRequestsPage = ({ onClose }) => {
                   <p>
                     <strong>Status: </strong>
                     <Badge
-                      bg={selectedRequest.status === "pending" ? "warning" : selectedRequest.status === "accepted" ? "success" : "danger"}
+                      bg={selectedRequest.status === "pending" ? "dark" : selectedRequest.status === "accepted" ? "success" : "danger"}
                     >
                       {selectedRequest.status}
                     </Badge>

@@ -59,7 +59,9 @@ const Navigation = () => {
   return (
     <Navbar bg="dark" variant="dark" expand="lg" expanded={expanded} onToggle={setExpanded}>
       <Container>
-        <Navbar.Brand onClick={() => handleNavClick("/")}>
+        <Navbar.Brand 
+          onClick={() => handleNavClick("/")}
+          style={{ cursor: "pointer"}}>
           Lucky Cat
         </Navbar.Brand>
 

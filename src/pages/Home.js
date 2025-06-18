@@ -20,7 +20,11 @@ const Home = () => {
         <Dashboard />
       ) : (
         <Alert variant="warning" className="text-center">
-          Please <Link to="/login">log in</Link> to view posts.
+          Please&nbsp;
+          <Link to="/login" className="fw-bold">log&nbsp;in</Link>
+          &nbsp;or&nbsp;
+          <Link to="/register" className="fw-bold">create an account</Link>
+          &nbsp;to view posts.
         </Alert>
       )}
     </Container>

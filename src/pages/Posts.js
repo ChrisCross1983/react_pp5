@@ -360,7 +360,6 @@ const Posts = ({ posts, loading, error, setPosts }) => {
                             alreadyRequestedPostIds.includes(post.id)
                               ? {
                                   pointerEvents: "auto",
-                                  opacity: 0.6,
                                   cursor: "not-allowed",
                                 }
                               : {}
